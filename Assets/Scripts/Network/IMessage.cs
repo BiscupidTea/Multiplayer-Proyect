@@ -34,7 +34,7 @@ public class NetHandShake : IMessage<(long, int)>
 
     public MessageType GetMessageType()
     {
-       return MessageType.HandShake;
+        return MessageType.HandShake;
     }
 
     public byte[] Serialize()
@@ -91,4 +91,39 @@ public class NetVector3 : IMessage<UnityEngine.Vector3>
     }
 
     //Dictionary<Client,Dictionary<msgType,int>>
+}
+
+public class NetCode : IMessage<string>
+{
+    public string consoleMessage;
+    public string Deserialize(byte[] message)
+    {
+        string outData;
+
+        outData = BitConverter.ToString(message, 4);
+
+        return outData;
+    }
+
+    public MessageType GetMessageType()
+    {
+        return MessageType.Console;
+    }
+
+    public byte[] Serialize()
+    {
+        List<byte> outData = new List<byte>();
+
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        char[] stringArray = new char[consoleMessage.Length];
+
+        for (int i = 0; i < consoleMessage.Length; i++)
+        {
+            stringArray[i] = consoleMessage[i];
+            outData.AddRange(BitConverter.GetBytes(stringArray[i]));
+        }
+
+        return outData.ToArray();
+    }
 }
