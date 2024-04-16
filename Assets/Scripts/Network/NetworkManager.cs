@@ -92,6 +92,8 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
     {
         AddClient(ip);
 
+        MessageManager.Instance.OnRecieveMessage(data);
+
         if (OnReceiveEvent != null)
             OnReceiveEvent.Invoke(data, ip);
     }

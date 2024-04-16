@@ -1,9 +1,6 @@
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 using System;
-using System.Text;
-using System.Net;
 
 public enum MessageType
 {
@@ -12,17 +9,32 @@ public enum MessageType
     Position = 1
 }
 
-public interface IMessage<T>
+public abstract class BaseMessage<PayLoadType>
 {
-    public MessageType GetMessageType();
-    public byte[] Serialize();
-    public T Deserialize(byte[] message);
+    public PayLoadType data;
+    public Action<PayLoadType> OnDeserialize;
+    public abstract MessageType GetMessageType();
+    public abstract byte[] Serialize();
+    public abstract PayLoadType Deserialize(byte[] message);
+    public abstract PayLoadType GetData();
 }
 
-public class NetHandShake : IMessage<(long, int)>
+public abstract class OrdenableMessage<PayLoadType> : BaseMessage<PayLoadType>
 {
-    (long, int) data;
-    public (long, int) Deserialize(byte[] message)
+    protected OrdenableMessage(byte[] message)
+    {
+        MsgID = BitConverter.ToUInt64(message, 4);
+    }
+
+    protected ulong lastMsgID = 0;
+
+    protected ulong MsgID = 0;
+    protected static Dictionary<PayLoadType, ulong> lastExecutedMsgID = new Dictionary<PayLoadType, ulong>();
+}
+
+public class NetHandShake : BaseMessage<(long, int)>
+{
+    public override (long, int) Deserialize(byte[] message)
     {
         (long, int) outData;
 
@@ -32,12 +44,17 @@ public class NetHandShake : IMessage<(long, int)>
         return outData;
     }
 
-    public MessageType GetMessageType()
+    public override (long, int) GetData()
+    {
+        return data;
+    }
+
+    public override MessageType GetMessageType()
     {
         return MessageType.HandShake;
     }
 
-    public byte[] Serialize()
+    public override byte[] Serialize()
     {
         List<byte> outData = new List<byte>();
 
@@ -51,17 +68,15 @@ public class NetHandShake : IMessage<(long, int)>
     }
 }
 
-public class NetVector3 : IMessage<UnityEngine.Vector3>
+public class NetVector3 : BaseMessage<Vector3>
 {
-    private static ulong lastMsgID = 0;
-    private Vector3 data;
 
     public NetVector3(Vector3 data)
     {
         this.data = data;
     }
 
-    public Vector3 Deserialize(byte[] message)
+    public override Vector3 Deserialize(byte[] message)
     {
         Vector3 outData;
 
@@ -72,12 +87,17 @@ public class NetVector3 : IMessage<UnityEngine.Vector3>
         return outData;
     }
 
-    public MessageType GetMessageType()
+    public override Vector3 GetData()
+    {
+        return data;
+    }
+
+    public override MessageType GetMessageType()
     {
         return MessageType.Position;
     }
 
-    public byte[] Serialize()
+    public override byte[] Serialize()
     {
         List<byte> outData = new List<byte>();
 
@@ -93,10 +113,14 @@ public class NetVector3 : IMessage<UnityEngine.Vector3>
     //Dictionary<Client,Dictionary<msgType,int>>
 }
 
-public class NetCode : IMessage<string>
+public class NetCode : BaseMessage<string>
 {
-    public string consoleMessage;
-    public string Deserialize(byte[] message)
+    public NetCode(string consoleMessage)
+    {
+        data = consoleMessage;
+    }
+
+    public override string Deserialize(byte[] message)
     {
         string outData;
 
@@ -105,22 +129,27 @@ public class NetCode : IMessage<string>
         return outData;
     }
 
-    public MessageType GetMessageType()
+    public override string GetData()
+    {
+        return data;
+    }
+
+    public override MessageType GetMessageType()
     {
         return MessageType.Console;
     }
 
-    public byte[] Serialize()
+    public override byte[] Serialize()
     {
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
-        char[] stringArray = new char[consoleMessage.Length];
+        char[] stringArray = new char[data.Length];
 
-        for (int i = 0; i < consoleMessage.Length; i++)
+        for (int i = 0; i < data.Length; i++)
         {
-            stringArray[i] = consoleMessage[i];
+            stringArray[i] = data[i];
             outData.AddRange(BitConverter.GetBytes(stringArray[i]));
         }
 

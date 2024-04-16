@@ -1,21 +1,38 @@
 using System;
-using System.Net;
 using UnityEngine;
 
-public class MessageManager : MonoBehaviour
-{
-    private void Start()
+public class MessageManager : MonoBehaviourSingleton<MessageManager>
+{    
+    public void OnRecieveMessage(byte[] data)
     {
-        NetworkManager.Instance.OnReceiveEvent += CheckMessageType;
-    }
-
-    private void CheckMessageType(byte[] data, IPEndPoint ip)
-    {
-        int messageType = BitConverter.ToInt32(data, 0);
-
-        switch (messageType) 
+        if (NetworkManager.Instance.isServer)
+        {
+           
+        }
+        else 
         { 
         
+        }
+
+        MessageType newMessage = (MessageType)BitConverter.ToInt32(data, 0);
+
+        switch (newMessage)
+        {
+            case MessageType.HandShake:
+
+                break;
+
+            case MessageType.Console:
+
+                break;
+
+            case MessageType.Position:
+
+                break;
+
+            default:
+                Debug.LogError("Message type not found");
+                break;
         }
     }
 }
