@@ -19,17 +19,17 @@ public abstract class BaseMessage<PayLoadType>
     public abstract PayLoadType GetData();
 }
 
-public abstract class OrdenableMessage<PayLoadType> : BaseMessage<PayLoadType>
+public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
 {
-    protected OrdenableMessage(byte[] message)
+    protected OrderableMessage(byte[] message)
     {
         MsgID = BitConverter.ToUInt64(message, 4);
     }
 
-    protected ulong lastMsgID = 0;
+    protected static ulong lastMsgID = 0;
 
     protected ulong MsgID = 0;
-    protected static Dictionary<PayLoadType, ulong> lastExecutedMsgID = new Dictionary<PayLoadType, ulong>();
+    protected static Dictionary<PayloadType, ulong> lastExecutedMsgID = new Dictionary<PayloadType, ulong>();
 }
 
 public class NetHandShake : BaseMessage<(long, int)>
@@ -70,7 +70,7 @@ public class NetHandShake : BaseMessage<(long, int)>
 
 public class NetVector3 : BaseMessage<Vector3>
 {
-
+    private static ulong lastMsgID = 0;
     public NetVector3(Vector3 data)
     {
         this.data = data;
@@ -122,9 +122,13 @@ public class NetCode : BaseMessage<string>
 
     public override string Deserialize(byte[] message)
     {
-        string outData;
+        string outData = "";
+        int messageLenght = BitConverter.ToInt32(message, 4);
 
-        outData = BitConverter.ToString(message, 4);
+        for (int i = 0; i < messageLenght; i++)
+        {
+            outData += (char)message[8 + i];
+        }
 
         return outData;
     }
@@ -144,13 +148,11 @@ public class NetCode : BaseMessage<string>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
-
-        char[] stringArray = new char[data.Length];
+        outData.AddRange(BitConverter.GetBytes(data.Length));
 
         for (int i = 0; i < data.Length; i++)
         {
-            stringArray[i] = data[i];
-            outData.AddRange(BitConverter.GetBytes(stringArray[i]));
+            outData.Add((byte)data[i]);
         }
 
         return outData.ToArray();

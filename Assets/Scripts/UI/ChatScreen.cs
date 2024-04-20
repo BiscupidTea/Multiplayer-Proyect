@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System;
+using UnityEditor.VersionControl;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class ChatScreen : MonoBehaviourSingleton<ChatScreen>
@@ -11,39 +13,25 @@ public class ChatScreen : MonoBehaviourSingleton<ChatScreen>
         inputMessage.onEndEdit.AddListener(OnEndEdit);
 
         this.gameObject.SetActive(false);
-
-        NetworkManager.Instance.OnReceiveEvent += OnReceiveDataEvent;
     }
 
-    void OnReceiveDataEvent(byte[] data, IPEndPoint ep)
+    public void OnReceiveDataEvent(string message)
     {
-        if (NetworkManager.Instance.isServer)
-        {
-            NetworkManager.Instance.Broadcast(data);
-        }
-
-        messages.text += System.Text.ASCIIEncoding.UTF8.GetString(data) + System.Environment.NewLine;
+        messages.text += message + System.Environment.NewLine;
     }
 
-    void OnEndEdit(string str)
+    public void OnEndEdit(string str)
     {
         if (inputMessage.text != "")
         {
-            if (NetworkManager.Instance.isServer)
-            {
-                NetworkManager.Instance.Broadcast(System.Text.ASCIIEncoding.UTF8.GetBytes(inputMessage.text));
-                messages.text += inputMessage.text + System.Environment.NewLine;
-            }
-            else
-            {
-                NetworkManager.Instance.SendToServer(System.Text.ASCIIEncoding.UTF8.GetBytes(inputMessage.text));
-            }
+            Debug.Log(str);
 
             inputMessage.ActivateInputField();
             inputMessage.Select();
             inputMessage.text = "";
+         
+            MessageManager.Instance.OnSendConsoleMessage(str);
         }
-
     }
 
 }

@@ -76,6 +76,8 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
             clients.Add(clientId, new Client(ip, id, Time.realtimeSinceStartup));
 
             clientId++;
+
+            MessageManager.Instance.OnSendHandshake();
         }
     }
 
