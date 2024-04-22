@@ -32,19 +32,14 @@ public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
     protected static Dictionary<PayloadType, ulong> lastExecutedMsgID = new Dictionary<PayloadType, ulong>();
 }
 
-public class NetHandShake : BaseMessage<(long, int)>
+public class NetHandShake : BaseMessage<int>
 {
-    public override (long, int) Deserialize(byte[] message)
+    public override int Deserialize(byte[] message)
     {
-        (long, int) outData;
-
-        outData.Item1 = BitConverter.ToInt64(message, 4);
-        outData.Item2 = BitConverter.ToInt32(message, 12);
-
-        return outData;
+        return BitConverter.ToInt32(message, 4);
     }
 
-    public override (long, int) GetData()
+    public override int GetData()
     {
         return data;
     }
@@ -60,8 +55,7 @@ public class NetHandShake : BaseMessage<(long, int)>
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
-        outData.AddRange(BitConverter.GetBytes(data.Item1));
-        outData.AddRange(BitConverter.GetBytes(data.Item2));
+        outData.AddRange(BitConverter.GetBytes(data));
 
 
         return outData.ToArray();
@@ -109,8 +103,6 @@ public class NetVector3 : BaseMessage<Vector3>
 
         return outData.ToArray();
     }
-
-    //Dictionary<Client,Dictionary<msgType,int>>
 }
 
 public class NetCode : BaseMessage<string>

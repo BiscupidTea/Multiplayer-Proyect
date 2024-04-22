@@ -60,8 +60,6 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         this.ipAddress = ip;
 
         connection = new UdpConnection(ip, port, this);
-
-        AddClient(new IPEndPoint(ip, port));
     }
 
     void AddClient(IPEndPoint ip)
@@ -77,7 +75,8 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
 
             clientId++;
 
-            MessageManager.Instance.OnSendHandshake();
+            NetHandShake handShake = new NetHandShake();
+            MessageManager.Instance.OnSendHandshake(handShake.Serialize());
         }
     }
 
@@ -103,6 +102,11 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
     public void SendToServer(byte[] data)
     {
         connection.Send(data);
+    }
+
+    public void SendToClient(byte[] data, IPEndPoint ip)
+    {
+        connection.Send(data, ip);
     }
 
     public void Broadcast(byte[] data)

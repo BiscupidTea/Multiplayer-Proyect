@@ -4,17 +4,30 @@ using UnityEngine;
 public class MessageManager : MonoBehaviourSingleton<MessageManager>
 {
     private NetCode netCode = new NetCode("");
+
     public void OnRecieveMessage(byte[] data)
     {
         MessageType typeMessage = (MessageType)BitConverter.ToInt32(data, 0);
 
+        if (NetworkManager.Instance.isServer)
+        {
+            HandleServerMessage(typeMessage, data);
+        }
+        else
+        {
+            HandleClientMessage(typeMessage, data);
+        }
+    }
+
+    private void HandleClientMessage(MessageType typeMessage, byte[] data)
+    {
         switch (typeMessage)
         {
             case MessageType.HandShake:
 
                 break;
 
-            case MessageType.Console:     
+            case MessageType.Console:
                 ChatScreen.Instance.OnReceiveDataEvent(netCode.Deserialize(data));
 
                 break;
@@ -27,11 +40,30 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
                 Debug.LogError("Message type not found");
                 break;
         }
+    }
 
-        if (NetworkManager.Instance.isServer)
+    private void HandleServerMessage(MessageType typeMessage, byte[] data)
+    {
+        switch (typeMessage)
         {
-            NetworkManager.Instance.Broadcast(data);
+            case MessageType.HandShake:
+
+                break;
+
+            case MessageType.Console:
+                ChatScreen.Instance.OnReceiveDataEvent(netCode.Deserialize(data));
+                NetworkManager.Instance.Broadcast(data);
+                break;
+
+            case MessageType.Position:
+
+                break;
+
+            default:
+                Debug.LogError("Message type not found");
+                break;
         }
+
     }
 
     public void OnSendConsoleMessage(string message)
@@ -44,14 +76,14 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
             NetworkManager.Instance.Broadcast(convertedMessage);
             ChatScreen.Instance.OnReceiveDataEvent(message);
         }
-        else 
-        { 
+        else
+        {
             NetworkManager.Instance.SendToServer(convertedMessage);
         }
     }
 
-    public void OnSendHandshake()
+    public void OnSendHandshake(byte[] data)
     {
-       
+        NetworkManager.Instance.SendToServer(data);
     }
 }
