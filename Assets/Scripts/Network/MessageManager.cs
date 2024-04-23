@@ -55,25 +55,27 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         }
     }
 
+    private void OnSendMessage(byte[] message)
+    {
+        if (NetworkManager.Instance.isServer)
+        {
+            NetworkManager.Instance.Broadcast(message);
+        }
+        else
+        {
+            NetworkManager.Instance.SendToServer(message);
+        }
+    }
+
     public void OnSendConsoleMessage(string message)
     {
         netCode.data = message;
 
+            
         if (NetworkManager.Instance.isServer)
         {
-            NetworkManager.Instance.Broadcast(netHandShake.Serialize());
             ChatScreen.Instance.OnReceiveDataEvent(message);
         }
-        else
-        {
-            NetworkManager.Instance.SendToServer(netHandShake.Serialize());
-        }
-    }
-
-    public void OnSendHandshake(string name)
-    {
-        netHandShake.data.Item2 = name;
-
-        NetworkManager.Instance.SendToServer(netHandShake.Serialize());
+        OnSendMessage();
     }
 }

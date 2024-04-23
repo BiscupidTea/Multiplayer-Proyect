@@ -29,8 +29,8 @@ public class ChatScreen : MonoBehaviourSingleton<ChatScreen>
             inputMessage.ActivateInputField();
             inputMessage.Select();
             inputMessage.text = "";
-         
-            MessageManager.Instance.OnSendConsoleMessage(str);
+
+            NetworkManager.Instance.();
         }
     }
 
