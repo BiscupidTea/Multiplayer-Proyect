@@ -4,9 +4,10 @@ using System;
 
 public enum MessageType
 {
-    HandShake = -1,
-    Console = 0,
-    Position = 1
+    MessageToServer = 0,
+    MessageToClient = 1,
+    Console = 2,
+    Position = 3
 }
 
 public abstract class BaseMessage<PayLoadType>
@@ -32,21 +33,34 @@ public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
     protected static Dictionary<PayloadType, ulong> lastExecutedMsgID = new Dictionary<PayloadType, ulong>();
 }
 
-public class NetHandShake : BaseMessage<int>
+public class NetMessageToClient : BaseMessage<(int, int, string)>
 {
-    public override int Deserialize(byte[] message)
+    public override (int, int, string) Deserialize(byte[] message)
     {
-        return BitConverter.ToInt32(message, 4);
+        (int, int, string) outData;
+
+        outData.Item1 = BitConverter.ToInt32(message, 0);
+        outData.Item2 = BitConverter.ToInt32(message, 4);
+
+        outData.Item3 = "";
+        int messageLenght = BitConverter.ToInt32(message, 8);
+
+        for (int i = 0; i < messageLenght; i++)
+        {
+            outData.Item3 += (char)message[8 + i];
+        }
+
+        return outData;
     }
 
-    public override int GetData()
+    public override (int, int, string) GetData()
     {
         return data;
     }
 
     public override MessageType GetMessageType()
     {
-        return MessageType.HandShake;
+        return MessageType.MessageToClient;
     }
 
     public override byte[] Serialize()
@@ -55,7 +69,58 @@ public class NetHandShake : BaseMessage<int>
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
-        outData.AddRange(BitConverter.GetBytes(data));
+        outData.AddRange(BitConverter.GetBytes(data.Item2));
+        outData.AddRange(BitConverter.GetBytes(data.Item3.Length));
+
+        for (int i = 0; i < data.Item3.Length; i++)
+        {
+            outData.Add((byte)data.Item3[i]);
+        }
+
+
+        return outData.ToArray();
+    }
+}
+
+public class NetMessageToServer : BaseMessage<string>
+{
+    public override string Deserialize(byte[] message)
+    {
+        string outData;
+
+        outData = "";
+        int messageLenght = BitConverter.ToInt32(message, 4);
+
+        for (int i = 0; i < messageLenght; i++)
+        {
+            outData += (char)message[4 + i];
+        }
+
+        return outData;
+    }
+
+    public override string GetData()
+    {
+        return data;
+    }
+
+    public override MessageType GetMessageType()
+    {
+        return MessageType.MessageToServer;
+    }
+
+    public override byte[] Serialize()
+    {
+        List<byte> outData = new List<byte>();
+
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        outData.AddRange(BitConverter.GetBytes(data.Length));
+
+        for (int i = 0; i < data.Length; i++)
+        {
+            outData.Add((byte)data[i]);
+        }
 
 
         return outData.ToArray();

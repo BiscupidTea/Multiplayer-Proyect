@@ -17,6 +17,16 @@ public struct Client
     }
 }
 
+public struct Players
+{
+    public string clientId;
+
+    public Players(string clientName)
+    {
+        this.clientId = clientName;
+    }
+}
+
 public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveData
 {
     public IPAddress ipAddress
@@ -41,9 +51,10 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
     private UdpConnection connection;
 
     private readonly Dictionary<int, Client> clients = new Dictionary<int, Client>();
+    private readonly Dictionary<int, Players> players = new Dictionary<int, Players>();
     private readonly Dictionary<IPEndPoint, int> ipToId = new Dictionary<IPEndPoint, int>();
 
-    int clientId = 0; // This id should be generated during first handshake
+    public int clientId = 0; // This id should be generated during first handshake
 
     public void StartServer(int port)
     {
@@ -52,7 +63,7 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         connection = new UdpConnection(port, this);
     }
 
-    public void StartClient(IPAddress ip, int port)
+    public void StartClient(IPAddress ip, int port, string name)
     {
         isServer = false;
 
@@ -60,6 +71,8 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         this.ipAddress = ip;
 
         connection = new UdpConnection(ip, port, this);
+
+        MessageManager.Instance.OnSendHandshake(name);
     }
 
     void AddClient(IPEndPoint ip)
@@ -72,12 +85,12 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
             ipToId[ip] = clientId;
 
             clients.Add(clientId, new Client(ip, id, Time.realtimeSinceStartup));
-
-            clientId++;
-
-            NetHandShake handShake = new NetHandShake();
-            MessageManager.Instance.OnSendHandshake(handShake.Serialize());
         }
+    }
+
+    public void addPlayer(string playerName)
+    {
+        players.Add(clientId, new Players(playerName));
     }
 
     void RemoveClient(IPEndPoint ip)
