@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.UI;
+using System.Data;
 
 public enum MessageType
 {
@@ -33,27 +35,26 @@ public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
     protected static Dictionary<PayloadType, ulong> lastExecutedMsgID = new Dictionary<PayloadType, ulong>();
 }
 
-public class NetMessageToClient : BaseMessage<(int, int, string)>
+public class NetMessageToClient : BaseMessage<(int, string)>
 {
-    public override (int, int, string) Deserialize(byte[] message)
+    public override (int, string) Deserialize(byte[] message)
     {
-        (int, int, string) outData;
+        (int, string) outData;
 
-        outData.Item1 = BitConverter.ToInt32(message, 0);
-        outData.Item2 = BitConverter.ToInt32(message, 4);
-
-        outData.Item3 = "";
+        outData.Item1 = BitConverter.ToInt32(message, 4); //PlayerID
         int messageLenght = BitConverter.ToInt32(message, 8);
+
+        outData.Item2 = ""; //Message
 
         for (int i = 0; i < messageLenght; i++)
         {
-            outData.Item3 += (char)message[8 + i];
+            outData.Item2 += (char)message[12 + i];
         }
 
         return outData;
     }
 
-    public override (int, int, string) GetData()
+    public override (int, string) GetData()
     {
         return data;
     }
@@ -69,37 +70,42 @@ public class NetMessageToClient : BaseMessage<(int, int, string)>
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
-        outData.AddRange(BitConverter.GetBytes(data.Item2));
-        outData.AddRange(BitConverter.GetBytes(data.Item3.Length));
+        outData.AddRange(BitConverter.GetBytes(data.Item1));
+        outData.AddRange(BitConverter.GetBytes(data.Item2.Length));
 
-        for (int i = 0; i < data.Item3.Length; i++)
+        for (int i = 0; i < data.Item2.Length; i++)
         {
-            outData.Add((byte)data.Item3[i]);
+            outData.Add((byte)data.Item2[i]);
         }
-
 
         return outData.ToArray();
     }
 }
 
-public class NetMessageToServer : BaseMessage<string>
+public class NetMessageToServer : BaseMessage<(int, string)>
 {
-    public override string Deserialize(byte[] message)
-    {
-        string outData;
+    //ID
+    //ClientID
 
-        outData = "";
-        int messageLenght = BitConverter.ToInt32(message, 4);
+    public override (int, string) Deserialize(byte[] message)
+    {
+        (int, string) outData;
+
+        outData.Item1 = BitConverter.ToInt32(message, 4); //ID
+
+        outData.Item2 = "";//ClientID
+        int messageLenght = BitConverter.ToInt32(message, 8);
 
         for (int i = 0; i < messageLenght; i++)
         {
-            outData += (char)message[4 + i];
+            outData.Item2 += (char)message[12 + i];
         }
 
+        Debug.Log("Message to Server from: " + outData.Item2  + " - And the Id is: " + outData.Item1);
         return outData;
     }
 
-    public override string GetData()
+    public override (int, string) GetData()
     {
         return data;
     }
@@ -115,13 +121,14 @@ public class NetMessageToServer : BaseMessage<string>
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
-        outData.AddRange(BitConverter.GetBytes(data.Length));
+        outData.AddRange(BitConverter.GetBytes(data.Item1)); //ID
 
-        for (int i = 0; i < data.Length; i++)
+        outData.AddRange(BitConverter.GetBytes(data.Item2.Length)); //ClientID
+
+        for (int i = 0; i < data.Item2.Length; i++)
         {
-            outData.Add((byte)data[i]);
+            outData.Add((byte)data.Item2[i]);
         }
-
 
         return outData.ToArray();
     }
@@ -170,27 +177,28 @@ public class NetVector3 : BaseMessage<Vector3>
     }
 }
 
-public class NetCode : BaseMessage<string>
+public class NetCode : BaseMessage<(int, string)>
 {
-    public NetCode(string consoleMessage)
+    public override (int, string) Deserialize(byte[] message)
     {
-        data = consoleMessage;
-    }
+        (int, string) outData;
 
-    public override string Deserialize(byte[] message)
-    {
-        string outData = "";
-        int messageLenght = BitConverter.ToInt32(message, 4);
+        //PlayerID
+        outData.Item1 = BitConverter.ToInt32(message, 4);
+
+        //message
+        outData.Item2 = "";
+        int messageLenght = BitConverter.ToInt32(message, 8);
 
         for (int i = 0; i < messageLenght; i++)
         {
-            outData += (char)message[8 + i];
+            outData.Item2 += (char)message[12 + i];
         }
 
         return outData;
     }
 
-    public override string GetData()
+    public override (int, string) GetData()
     {
         return data;
     }
@@ -205,11 +213,13 @@ public class NetCode : BaseMessage<string>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
-        outData.AddRange(BitConverter.GetBytes(data.Length));
 
-        for (int i = 0; i < data.Length; i++)
+        outData.AddRange(BitConverter.GetBytes(data.Item1));
+        outData.AddRange(BitConverter.GetBytes(data.Item2.Length));
+
+        for (int i = 0; i < data.Item2.Length; i++)
         {
-            outData.Add((byte)data[i]);
+            outData.Add((byte)data.Item2[i]);
         }
 
         return outData.ToArray();

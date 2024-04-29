@@ -24,13 +24,11 @@ public class ChatScreen : MonoBehaviourSingleton<ChatScreen>
     {
         if (inputMessage.text != "")
         {
-            Debug.Log(str);
-
             inputMessage.ActivateInputField();
             inputMessage.Select();
             inputMessage.text = "";
 
-            NetworkManager.Instance.();
+            MessageManager.Instance.OnSendConsoleMessage(str);
         }
     }
 

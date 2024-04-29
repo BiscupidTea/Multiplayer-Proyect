@@ -257,6 +257,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TimeOut: 30
+  clientId: 0
 --- !u!4 &180350410
 Transform:
   m_ObjectHideFlags: 0
@@ -460,7 +461,7 @@ MonoBehaviour:
   startServerBtn: {fileID: 306608487}
   portInputField: {fileID: 1558557928}
   addressInputField: {fileID: 2123302590}
-  name: {fileID: 0}
+  playerName: {fileID: 1007518404}
 --- !u!1 &304126657
 GameObject:
   m_ObjectHideFlags: 0

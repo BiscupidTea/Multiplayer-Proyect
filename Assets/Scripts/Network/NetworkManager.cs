@@ -20,10 +20,12 @@ public struct Client
 public struct Players
 {
     public string clientId;
+    public int id;
 
-    public Players(string clientName)
+    public Players(string clientName, int id)
     {
         this.clientId = clientName;
+        this.id = id;
     }
 }
 
@@ -51,7 +53,8 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
     private UdpConnection connection;
 
     private readonly Dictionary<int, Client> clients = new Dictionary<int, Client>();
-    private readonly Dictionary<int, Players> players = new Dictionary<int, Players>();
+    public List<Players> players = new List<Players>();
+    public Players playerData;
     private readonly Dictionary<IPEndPoint, int> ipToId = new Dictionary<IPEndPoint, int>();
 
     public int clientId = 0; // This id should be generated during first handshake
@@ -88,9 +91,9 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         }
     }
 
-    public void addPlayer(string playerName)
+    public void addPlayer(string clientId, int Id)
     {
-        players.Add(clientId, new Players(playerName));
+        players.Add(new Players(clientId, Id));
     }
 
     void RemoveClient(IPEndPoint ip)
@@ -106,7 +109,7 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
     {
         AddClient(ip);
 
-        MessageManager.Instance.OnRecieveMessage(data);
+        MessageManager.Instance.OnRecieveMessage(data, ip);
 
         if (OnReceiveEvent != null)
             OnReceiveEvent.Invoke(data, ip);
