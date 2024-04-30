@@ -17,25 +17,32 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         {
             case MessageType.MessageToServer:
 
-                (int, string) PlayerData = netMessageToClient.Deserialize(data);
+                Players newPlayer = new Players(netMessageToServer.Deserialize(data).Item2, netMessageToServer.Deserialize(data).Item1) ;
 
-                PlayerData.Item1 = NetworkManager.Instance.clientId;
-                PlayerData.Item2 = netMessageToClient.Deserialize(data).Item2;
+                newPlayer.id = NetworkManager.Instance.clientId;
+                newPlayer.clientId = netMessageToServer.Deserialize(data).Item2;
 
-                NetworkManager.Instance.addPlayer(PlayerData.Item2, PlayerData.Item1);
+                NetworkManager.Instance.addPlayer(newPlayer);
 
-                netMessageToClient.data = PlayerData;
+                netMessageToClient.data = NetworkManager.Instance.players;
 
                 data = netMessageToClient.Serialize();
 
                 NetworkManager.Instance.clientId++;
-                Debug.Log("add new client = Client Id: " + netMessageToClient.Deserialize(data).Item2 + " - Id: " + netMessageToClient.Deserialize(data).Item1);
+                Debug.Log("add new client = Client Id: " + netMessageToClient.data[netMessageToClient.data.Count-1].clientId + " - Id: " + netMessageToClient.data[netMessageToClient.data.Count-1].id);
 
                 break;
 
             case MessageType.MessageToClient:
-                NetworkManager.Instance.addPlayer(netMessageToServer.Deserialize(data).Item2, netMessageToClient.Deserialize(data).Item1);
-                Debug.Log("add new client = Client Id: " + netMessageToClient.Deserialize(data).Item2 + " - Id: " + netMessageToClient.Deserialize(data).Item1);
+                NetworkManager.Instance.players = netMessageToClient.Deserialize(data);
+                for (int i = 0; i < NetworkManager.Instance.players.Count; i++)
+                {
+                    if (NetworkManager.Instance.players[i].clientId == NetworkManager.Instance.playerData.clientId)
+                    {
+                        NetworkManager.Instance.playerData.id = NetworkManager.Instance.players[i].id;
+                        break;
+                    }
+                }
                 break;
 
             case MessageType.Console:
@@ -81,6 +88,7 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
 
     public void OnSendConsoleMessage(string message)
     {
+        netCode.data.Item1 = NetworkManager.Instance.playerData.id;
         netCode.data.Item2 = message;
 
         if (NetworkManager.Instance.isServer)
@@ -90,9 +98,9 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         OnSendMessage(netCode.Serialize());
     }
 
-    public void OnSendHandshake(string name)
+    public void OnSendHandshake(string name, int id)
     {
-        netMessageToServer.data.Item1 = -1; //not assigned id
+        netMessageToServer.data.Item1 = id; //not assigned id
         netMessageToServer.data.Item2 = name; //client id
         NetworkManager.Instance.SendToServer(netMessageToServer.Serialize());
     }

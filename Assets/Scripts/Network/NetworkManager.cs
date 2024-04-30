@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using UnityEngine;
 
+[Serializable]
 public struct Client
 {
     public float timeStamp;
@@ -17,6 +18,7 @@ public struct Client
     }
 }
 
+[Serializable]
 public struct Players
 {
     public string clientId;
@@ -75,7 +77,9 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
 
         connection = new UdpConnection(ip, port, this);
 
-        MessageManager.Instance.OnSendHandshake(name);
+        playerData = new Players(name, -1);
+
+        MessageManager.Instance.OnSendHandshake(playerData.clientId, playerData.id);
     }
 
     void AddClient(IPEndPoint ip)
@@ -91,9 +95,9 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         }
     }
 
-    public void addPlayer(string clientId, int Id)
+    public void addPlayer(Players newPlayer)
     {
-        players.Add(new Players(clientId, Id));
+        players.Add(newPlayer);
     }
 
     void RemoveClient(IPEndPoint ip)
