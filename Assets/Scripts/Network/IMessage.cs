@@ -2,16 +2,35 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
+// 0 - 3 = Message Type
+// 4 - 7 = Ordenable Message
+// 8 = Message
+
 public enum MessageType
 {
     MessageToServer = 0,
-    MessageToClient = 1,
-    Console = 2,
-    Position = 3
+    MessageToClient,
+    Console,
+    Position,
+    PingPong,
 }
+
+
+//public enum Operation
+//{
+//    Add,
+//    Substract,
+//    ShiftLeft,
+//    ShiftRight
+//}
+
 
 public abstract class BaseMessage<PayLoadType>
 {
+    //public Operation[] Encription = new Operation[] { Operation.Add, Operation.ShiftLeft, Operation.ShiftLeft, Operation.Substract, Operation.Add };
+
+    public static int startPosition = 4;
+
     public PayLoadType data;
     public Action<PayLoadType> OnDeserialize;
     public abstract MessageType GetMessageType();
@@ -37,8 +56,7 @@ public class NetMessageToClient : BaseMessage<List<Players>>
 {
     public override List<Players> Deserialize(byte[] message)
     {
-        int currentPosition = 0;
-        currentPosition += 4;
+        int currentPosition = startPosition;
 
         int totalPlayers = BitConverter.ToInt32(message, currentPosition);
         Debug.Log("total player: " + totalPlayers);
@@ -119,14 +137,14 @@ public class NetMessageToServer : BaseMessage<(int, string)>
     {
         (int, string) outData;
 
-        outData.Item1 = BitConverter.ToInt32(message, 4); //ID
+        outData.Item1 = BitConverter.ToInt32(message, startPosition); //ID
 
         outData.Item2 = "";//ClientID
-        int messageLenght = BitConverter.ToInt32(message, 8);
+        int messageLenght = BitConverter.ToInt32(message, startPosition + 4);
 
         for (int i = 0; i < messageLenght; i++)
         {
-            outData.Item2 += (char)message[12 + i];
+            outData.Item2 += (char)message[startPosition + 8 + i];
         }
         return outData;
     }
@@ -147,6 +165,8 @@ public class NetMessageToServer : BaseMessage<(int, string)>
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
+        //
+
         outData.AddRange(BitConverter.GetBytes(data.Item1)); //ID
 
         outData.AddRange(BitConverter.GetBytes(data.Item2.Length)); //ClientID
@@ -162,7 +182,6 @@ public class NetMessageToServer : BaseMessage<(int, string)>
 
 public class NetVector3 : BaseMessage<Vector3>
 {
-    private static ulong lastMsgID = 0;
     public NetVector3(Vector3 data)
     {
         this.data = data;
@@ -172,9 +191,9 @@ public class NetVector3 : BaseMessage<Vector3>
     {
         Vector3 outData;
 
-        outData.x = BitConverter.ToSingle(message, 8);
-        outData.y = BitConverter.ToSingle(message, 12);
-        outData.z = BitConverter.ToSingle(message, 16);
+        outData.x = BitConverter.ToSingle(message, startPosition);
+        outData.y = BitConverter.ToSingle(message, startPosition + 4);
+        outData.z = BitConverter.ToSingle(message, startPosition + 8);
 
         return outData;
     }
@@ -194,7 +213,7 @@ public class NetVector3 : BaseMessage<Vector3>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
-        outData.AddRange(BitConverter.GetBytes(lastMsgID++));
+        //outData.AddRange();
         outData.AddRange(BitConverter.GetBytes(data.x));
         outData.AddRange(BitConverter.GetBytes(data.y));
         outData.AddRange(BitConverter.GetBytes(data.z));
@@ -210,15 +229,15 @@ public class NetCode : BaseMessage<(int, string)>
         (int, string) outData;
 
         //PlayerID
-        outData.Item1 = BitConverter.ToInt32(message, 4);
+        outData.Item1 = BitConverter.ToInt32(message, startPosition);
 
         //message
         outData.Item2 = "";
-        int messageLenght = BitConverter.ToInt32(message, 8);
+        int messageLenght = BitConverter.ToInt32(message, startPosition + 4);
 
         for (int i = 0; i < messageLenght; i++)
         {
-            outData.Item2 += (char)message[12 + i];
+            outData.Item2 += (char)message[startPosition + 8 + i];
         }
 
         return outData;

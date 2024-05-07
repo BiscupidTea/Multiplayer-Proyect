@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 public class MessageManager : MonoBehaviourSingleton<MessageManager>
@@ -8,6 +8,9 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
     private NetCode netCode = new NetCode();
     private NetMessageToServer netMessageToServer = new NetMessageToServer();
     private NetMessageToClient netMessageToClient = new NetMessageToClient();
+
+    private DateTime lastMessageRecieved = DateTime.UtcNow;
+    private int timeOut = 5;
 
     public void OnRecieveMessage(byte[] data, IPEndPoint Ip)
     {
@@ -17,7 +20,7 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         {
             case MessageType.MessageToServer:
 
-                Players newPlayer = new Players(netMessageToServer.Deserialize(data).Item2, netMessageToServer.Deserialize(data).Item1) ;
+                Players newPlayer = new Players(netMessageToServer.Deserialize(data).Item2, netMessageToServer.Deserialize(data).Item1);
 
                 newPlayer.id = NetworkManager.Instance.clientId;
                 newPlayer.clientId = netMessageToServer.Deserialize(data).Item2;
@@ -29,7 +32,7 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
                 data = netMessageToClient.Serialize();
 
                 NetworkManager.Instance.clientId++;
-                Debug.Log("add new client = Client Id: " + netMessageToClient.data[netMessageToClient.data.Count-1].clientId + " - Id: " + netMessageToClient.data[netMessageToClient.data.Count-1].id);
+                Debug.Log("add new client = Client Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].clientId + " - Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].id);
 
                 break;
 
@@ -63,14 +66,45 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
 
                 break;
 
+            case MessageType.PingPong:
+                if (NetworkManager.Instance.isServer)
+                {
+                    List<byte> outData = new List<byte>();
+
+                    outData.AddRange(BitConverter.GetBytes((int)MessageType.PingPong));
+                    NetworkManager.Instance.SendToClient(outData.ToArray(), Ip);
+                }
+                else
+                {
+                    lastMessageRecieved = DateTime.UtcNow;
+
+                    List<byte> outData = new List<byte>();
+
+                    outData.AddRange(BitConverter.GetBytes((int)MessageType.PingPong));
+                    NetworkManager.Instance.SendToServer(outData.ToArray());
+                }
+                break;
+
             default:
                 Debug.LogError("Message type not found");
                 break;
         }
 
-        if (NetworkManager.Instance.isServer)
+        if (NetworkManager.Instance.isServer && typeMessage != MessageType.PingPong)
         {
             NetworkManager.Instance.Broadcast(data);
+        }
+
+    }
+
+    private void Update()
+    {
+        if (!NetworkManager.Instance.isServer)
+        {
+            if ((DateTime.UtcNow - lastMessageRecieved).Seconds > timeOut)
+            {
+                Debug.Log("disconect = " + (DateTime.UtcNow - lastMessageRecieved).TotalSeconds);
+            }
         }
     }
 
@@ -103,5 +137,14 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         netMessageToServer.data.Item1 = id; //not assigned id
         netMessageToServer.data.Item2 = name; //client id
         NetworkManager.Instance.SendToServer(netMessageToServer.Serialize());
+    }
+
+    public void StartPingPong()
+    {
+        List<byte> outData = new List<byte>();
+
+        outData.AddRange(BitConverter.GetBytes((int)MessageType.PingPong));
+
+        NetworkManager.Instance.SendToServer(outData.ToArray());
     }
 }

@@ -80,6 +80,7 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         playerData = new Players(name, -1);
 
         MessageManager.Instance.OnSendHandshake(playerData.clientId, playerData.id);
+        MessageManager.Instance.StartPingPong();
     }
 
     void AddClient(IPEndPoint ip)
@@ -93,6 +94,11 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
 
             clients.Add(clientId, new Client(ip, id, Time.realtimeSinceStartup));
         }
+    }
+
+    void Disconect()
+    {
+        clients.Clear();
     }
 
     public void addPlayer(Players newPlayer)
@@ -145,5 +151,14 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         // Flush the data in main thread
         if (connection != null)
             connection.FlushReceiveData();
+
+        if (isServer)
+        {
+
+        }
+        else
+        {
+
+        }
     }
 }
