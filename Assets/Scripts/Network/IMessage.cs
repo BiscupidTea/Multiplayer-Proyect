@@ -16,18 +16,18 @@ public enum MessageType
 }
 
 
-//public enum Operation
-//{
-//    Add,
-//    Substract,
-//    ShiftLeft,
-//    ShiftRight
-//}
+public enum Operation
+{
+    Add,
+    Substract,
+    ShiftLeft,
+    ShiftRight
+}
 
 
 public abstract class BaseMessage<PayLoadType>
 {
-    //public Operation[] Encription = new Operation[] { Operation.Add, Operation.ShiftLeft, Operation.ShiftLeft, Operation.Substract, Operation.Add };
+    public Operation[] Encription = new Operation[] { Operation.Add, Operation.ShiftLeft, Operation.ShiftLeft, Operation.Substract, Operation.Add };
 
     public static int startPosition = 4;
 

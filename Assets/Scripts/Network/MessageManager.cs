@@ -9,9 +9,6 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
     private NetMessageToServer netMessageToServer = new NetMessageToServer();
     private NetMessageToClient netMessageToClient = new NetMessageToClient();
 
-    private DateTime lastMessageRecieved = DateTime.UtcNow;
-    private int timeOut = 5;
-
     public void OnRecieveMessage(byte[] data, IPEndPoint Ip)
     {
         MessageType typeMessage = (MessageType)BitConverter.ToInt32(data, 0);
@@ -67,22 +64,11 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
                 break;
 
             case MessageType.PingPong:
-                if (NetworkManager.Instance.isServer)
+                if (!NetworkManager.Instance.isServer)
                 {
-                    List<byte> outData = new List<byte>();
-
-                    outData.AddRange(BitConverter.GetBytes((int)MessageType.PingPong));
-                    NetworkManager.Instance.SendToClient(outData.ToArray(), Ip);
+                    NetworkManager.Instance.pingText.text = "Ping = " + (DateTime.UtcNow - NetworkManager.Instance.lastMessageSended).Milliseconds;
                 }
-                else
-                {
-                    lastMessageRecieved = DateTime.UtcNow;
-
-                    List<byte> outData = new List<byte>();
-
-                    outData.AddRange(BitConverter.GetBytes((int)MessageType.PingPong));
-                    NetworkManager.Instance.SendToServer(outData.ToArray());
-                }
+                SendPingPong(data, Ip);
                 break;
 
             default:
@@ -97,14 +83,22 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
 
     }
 
-    private void Update()
+    private void SendPingPong(byte[] data, IPEndPoint Ip)
     {
-        if (!NetworkManager.Instance.isServer)
+        List<byte> outData = new List<byte>();
+        outData.AddRange(BitConverter.GetBytes((int)MessageType.PingPong));
+
+        if (NetworkManager.Instance.isServer)
         {
-            if ((DateTime.UtcNow - lastMessageRecieved).Seconds > timeOut)
-            {
-                Debug.Log("disconect = " + (DateTime.UtcNow - lastMessageRecieved).TotalSeconds);
-            }
+            NetworkManager.Instance.ResetClientTimer(Ip);
+            NetworkManager.Instance.SendToClient(outData.ToArray(), Ip);
+        }
+        else
+        {
+            NetworkManager.Instance.lastMessageSended = DateTime.UtcNow;
+
+            NetworkManager.Instance.lastMessageRecieved = DateTime.UtcNow;
+            NetworkManager.Instance.SendToServer(outData.ToArray());
         }
     }
 

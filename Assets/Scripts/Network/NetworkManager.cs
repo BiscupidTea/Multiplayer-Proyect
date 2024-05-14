@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using UnityEngine;
+using UnityEngine.UI;
 
 [Serializable]
 public struct Client
@@ -9,12 +10,19 @@ public struct Client
     public float timeStamp;
     public int id;
     public IPEndPoint ipEndPoint;
+    public DateTime LastMessageRecived;
 
     public Client(IPEndPoint ipEndPoint, int id, float timeStamp)
     {
         this.timeStamp = timeStamp;
         this.id = id;
         this.ipEndPoint = ipEndPoint;
+        this.LastMessageRecived = DateTime.UtcNow;
+    }
+
+    public void resetTimer()
+    {
+        LastMessageRecived = DateTime.UtcNow;
     }
 }
 
@@ -54,12 +62,17 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
 
     private UdpConnection connection;
 
-    private readonly Dictionary<int, Client> clients = new Dictionary<int, Client>();
+    private Dictionary<int, Client> clients = new Dictionary<int, Client>();
     public List<Players> players = new List<Players>();
     public Players playerData;
     private readonly Dictionary<IPEndPoint, int> ipToId = new Dictionary<IPEndPoint, int>();
+    public Text pingText;
 
     public int clientId = 0; // This id should be generated during first handshake
+
+    public DateTime lastMessageRecieved = DateTime.UtcNow;
+    public DateTime lastMessageSended = DateTime.UtcNow;
+    private int timeOut = 5;
 
     public void StartServer(int port)
     {
@@ -152,13 +165,37 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         if (connection != null)
             connection.FlushReceiveData();
 
-        if (isServer)
+        if (!isServer)
         {
-
+            if ((DateTime.UtcNow - lastMessageRecieved).Seconds > timeOut)
+            {
+                Disconect();
+                Debug.Log("disconected from server = " + (DateTime.UtcNow - lastMessageRecieved).TotalSeconds);
+            }
         }
         else
         {
-
+            for (int i = 0; i < clients.Count; i++)
+            {
+                if ((DateTime.UtcNow - clients[i].LastMessageRecived).Seconds > timeOut)
+                {
+                    RemoveClient(clients[i].ipEndPoint);
+                    Debug.Log("disconect player: " + players[i].clientId +" = " + (DateTime.UtcNow - lastMessageRecieved).TotalSeconds);
+                }
+            }
         }
     }
+
+    public void ResetClientTimer(IPEndPoint ip)
+    {
+        for (int i = 0; i < clients.Count; i++)
+        {
+            if (clients[i].ipEndPoint == ip)
+            {
+                clients[i].resetTimer();
+                Debug.Log("reset timer player");
+            }
+        }
+    }
+
 }
