@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [Serializable]
-public struct Client
+public class Client
 {
     public float timeStamp;
     public int id;
@@ -22,12 +22,12 @@ public struct Client
 
     public void resetTimer()
     {
-        LastMessageRecived = DateTime.UtcNow;
+        this.LastMessageRecived = DateTime.UtcNow;
     }
 }
 
 [Serializable]
-public struct Players
+public class Players
 {
     public string clientId;
     public int id;
@@ -73,6 +73,7 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
     public DateTime lastMessageRecieved = DateTime.UtcNow;
     public DateTime lastMessageSended = DateTime.UtcNow;
     private int timeOut = 5;
+    public bool initialized;
 
     public void StartServer(int port)
     {
@@ -93,10 +94,9 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         playerData = new Players(name, -1);
 
         MessageManager.Instance.OnSendHandshake(playerData.clientId, playerData.id);
-        MessageManager.Instance.StartPingPong();
     }
 
-    void AddClient(IPEndPoint ip)
+    public void AddClient(IPEndPoint ip)
     {
         if (!ipToId.ContainsKey(ip))
         {
@@ -112,6 +112,7 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
     void Disconect()
     {
         clients.Clear();
+        initialized = false;
     }
 
     public void addPlayer(Players newPlayer)
@@ -119,7 +120,7 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         players.Add(newPlayer);
     }
 
-    void RemoveClient(IPEndPoint ip)
+    public void RemoveClient(IPEndPoint ip)
     {
         if (ipToId.ContainsKey(ip))
         {
@@ -130,8 +131,6 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
 
     public void OnReceiveData(byte[] data, IPEndPoint ip)
     {
-        AddClient(ip);
-
         MessageManager.Instance.OnRecieveMessage(data, ip);
 
         if (OnReceiveEvent != null)
@@ -165,35 +164,36 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         if (connection != null)
             connection.FlushReceiveData();
 
-        if (!isServer)
+        if (!isServer && initialized)
         {
             if ((DateTime.UtcNow - lastMessageRecieved).Seconds > timeOut)
             {
+                Debug.Log((DateTime.UtcNow - lastMessageRecieved).Seconds);
+                NetworkScreen.Instance.SwitchToNetworkScreen();
                 Disconect();
-                Debug.Log("disconected from server = " + (DateTime.UtcNow - lastMessageRecieved).TotalSeconds);
+                Debug.Log("disconected from server = ");
             }
         }
-        else
+
+        if (isServer)
         {
             for (int i = 0; i < clients.Count; i++)
             {
                 if ((DateTime.UtcNow - clients[i].LastMessageRecived).Seconds > timeOut)
                 {
                     RemoveClient(clients[i].ipEndPoint);
-                    Debug.Log("disconect player: " + players[i].clientId +" = " + (DateTime.UtcNow - lastMessageRecieved).TotalSeconds);
                 }
             }
         }
     }
 
-    public void ResetClientTimer(IPEndPoint ip)
+    public void ResetClientTimer(int PlayerId)
     {
         for (int i = 0; i < clients.Count; i++)
         {
-            if (clients[i].ipEndPoint == ip)
+            if (clients[i].id == PlayerId)
             {
                 clients[i].resetTimer();
-                Debug.Log("reset timer player");
             }
         }
     }

@@ -1,104 +1,143 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using UnityEngine;
 
 public class MessageManager : MonoBehaviourSingleton<MessageManager>
 {
+    private CheckSumReeder checkSumReeder = new CheckSumReeder();
     private NetCode netCode = new NetCode();
+    private PingPong pingPong = new PingPong();
     private NetMessageToServer netMessageToServer = new NetMessageToServer();
     private NetMessageToClient netMessageToClient = new NetMessageToClient();
+    bool PrivateMessage = false;
 
     public void OnRecieveMessage(byte[] data, IPEndPoint Ip)
     {
         MessageType typeMessage = (MessageType)BitConverter.ToInt32(data, 0);
 
-        switch (typeMessage)
+        PrivateMessage = false;
+        if (checkSumReeder.CheckSumStatus(data))
         {
-            case MessageType.MessageToServer:
+            switch (typeMessage)
+            {
+                case MessageType.MessageToServer:
 
-                Players newPlayer = new Players(netMessageToServer.Deserialize(data).Item2, netMessageToServer.Deserialize(data).Item1);
+                    Players newPlayer = new Players(netMessageToServer.Deserialize(data).Item2, netMessageToServer.Deserialize(data).Item1);
 
-                newPlayer.id = NetworkManager.Instance.clientId;
-                newPlayer.clientId = netMessageToServer.Deserialize(data).Item2;
+                    newPlayer.id = NetworkManager.Instance.clientId;
+                    newPlayer.clientId = netMessageToServer.Deserialize(data).Item2;
 
-                NetworkManager.Instance.addPlayer(newPlayer);
-
-                netMessageToClient.data = NetworkManager.Instance.players;
-
-                data = netMessageToClient.Serialize();
-
-                NetworkManager.Instance.clientId++;
-                Debug.Log("add new client = Client Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].clientId + " - Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].id);
-
-                break;
-
-            case MessageType.MessageToClient:
-                NetworkManager.Instance.players = netMessageToClient.Deserialize(data);
-                for (int i = 0; i < NetworkManager.Instance.players.Count; i++)
-                {
-                    if (NetworkManager.Instance.players[i].clientId == NetworkManager.Instance.playerData.clientId)
+                    if (CheckAlreadyUseName(newPlayer.clientId))
                     {
-                        NetworkManager.Instance.playerData.id = NetworkManager.Instance.players[i].id;
-                        break;
-                    }
-                }
-                break;
+                        List<byte> outData = new List<byte>();
 
-            case MessageType.Console:
-                string playerName = "";
-                for (int i = 0; i < NetworkManager.Instance.players.Count; i++)
-                {
-                    if (NetworkManager.Instance.players[i].id == netCode.Deserialize(data).Item1)
+                        outData.AddRange(BitConverter.GetBytes((int)MessageType.MessageToClientDenied));
+
+                        NetworkManager.Instance.SendToClient(outData.ToArray(), Ip);
+
+                        Debug.Log("the Name " + newPlayer.clientId + " is aleredy in use");
+                        PrivateMessage = true;
+                    }
+                    else
                     {
-                        playerName = NetworkManager.Instance.players[i].clientId;
-                        break;
+                        NetworkManager.Instance.AddClient(Ip);
+                        NetworkManager.Instance.addPlayer(newPlayer);
+
+                        netMessageToClient.data = NetworkManager.Instance.players;
+
+                        data = netMessageToClient.Serialize();
+
+                        NetworkManager.Instance.clientId++;
+                        Debug.Log("add new client = Client Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].clientId + " - Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].id);
+                        PrivateMessage = false;
                     }
-                }
+                    break;
 
-                ChatScreen.Instance.OnReceiveDataEvent(playerName + " : " + netCode.Deserialize(data).Item2);
-                break;
+                case MessageType.MessageToClient:
+                    Debug.Log("message to client");
 
-            case MessageType.Position:
+                    NetworkManager.Instance.players = netMessageToClient.Deserialize(data);
+                    for (int i = 0; i < NetworkManager.Instance.players.Count; i++)
+                    {
+                        if (NetworkManager.Instance.players[i].clientId == NetworkManager.Instance.playerData.clientId)
+                        {
+                            NetworkManager.Instance.playerData.id = NetworkManager.Instance.players[i].id;
+                            LoadingScreen.Instance.connectToChat();
+                            break;
+                        }
+                    }
 
-                break;
+                    StartPingPong();
 
-            case MessageType.PingPong:
-                if (!NetworkManager.Instance.isServer)
-                {
-                    NetworkManager.Instance.pingText.text = "Ping = " + (DateTime.UtcNow - NetworkManager.Instance.lastMessageSended).Milliseconds;
-                }
-                SendPingPong(data, Ip);
-                break;
+                    PrivateMessage = false;
+                    break;
 
-            default:
-                Debug.LogError("Message type not found");
-                break;
+                case MessageType.MessageToClientDenied:
+                    LoadingScreen.Instance.ShowBackToMenu();
+                    Debug.Log("the Name is aleredy in use");
+                    break;
+
+                case MessageType.Console:
+                    string playerName = "";
+                    for (int i = 0; i < NetworkManager.Instance.players.Count; i++)
+                    {
+                        if (NetworkManager.Instance.players[i].id == netCode.Deserialize(data).Item1)
+                        {
+                            playerName = NetworkManager.Instance.players[i].clientId;
+                            break;
+                        }
+                    }
+
+                    ChatScreen.Instance.OnReceiveDataEvent(playerName + " : " + netCode.Deserialize(data).Item2);
+                    PrivateMessage = false;
+                    break;
+
+                case MessageType.Position:
+
+                    break;
+
+                case MessageType.PingPong:
+                    if (!NetworkManager.Instance.isServer)
+                    {
+                        NetworkManager.Instance.pingText.text = "Ping = " + (DateTime.UtcNow - NetworkManager.Instance.lastMessageSended).Milliseconds;
+                    }
+                    SendPingPong(Ip, data);
+                    PrivateMessage = true;
+                    break;
+
+                default:
+                    Debug.LogError("Message type not found");
+                    break;
+            }
+        }
+        else
+        {
+            Debug.Log("Message Corrupt");
         }
 
-        if (NetworkManager.Instance.isServer && typeMessage != MessageType.PingPong)
+        if (NetworkManager.Instance.isServer && !PrivateMessage)
         {
             NetworkManager.Instance.Broadcast(data);
         }
-
     }
 
-    private void SendPingPong(byte[] data, IPEndPoint Ip)
+    private void SendPingPong(IPEndPoint Ip, byte[] data)
     {
-        List<byte> outData = new List<byte>();
-        outData.AddRange(BitConverter.GetBytes((int)MessageType.PingPong));
-
         if (NetworkManager.Instance.isServer)
         {
-            NetworkManager.Instance.ResetClientTimer(Ip);
-            NetworkManager.Instance.SendToClient(outData.ToArray(), Ip);
+            NetworkManager.Instance.ResetClientTimer(pingPong.Deserialize(data));
+            NetworkManager.Instance.SendToClient(pingPong.Serialize(), Ip);
         }
         else
         {
             NetworkManager.Instance.lastMessageSended = DateTime.UtcNow;
-
             NetworkManager.Instance.lastMessageRecieved = DateTime.UtcNow;
-            NetworkManager.Instance.SendToServer(outData.ToArray());
+
+            pingPong.data = NetworkManager.Instance.playerData.id;
+
+            NetworkManager.Instance.SendToServer(pingPong.Serialize());
         }
     }
 
@@ -135,10 +174,24 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
 
     public void StartPingPong()
     {
-        List<byte> outData = new List<byte>();
+        Debug.Log("StartPingPong");
 
-        outData.AddRange(BitConverter.GetBytes((int)MessageType.PingPong));
+        pingPong.data = NetworkManager.Instance.playerData.id;
+        NetworkManager.Instance.lastMessageRecieved = DateTime.UtcNow;
+        NetworkManager.Instance.initialized = true;
+        NetworkManager.Instance.SendToServer(pingPong.Serialize());
+    }
 
-        NetworkManager.Instance.SendToServer(outData.ToArray());
+    private bool CheckAlreadyUseName(string newPlayerName)
+    {
+        for (int i = 0; i < NetworkManager.Instance.players.Count; i++)
+        {
+            if (NetworkManager.Instance.players.ToArray()[i].clientId == newPlayerName)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

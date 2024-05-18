@@ -1,20 +1,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Linq;
 
 // 0 - 3 = Message Type
-// 4 - 7 = Ordenable Message
-// 8 = Message
+// 4 = Message
+// FinalMessage = CheckSum
 
 public enum MessageType
 {
     MessageToServer = 0,
     MessageToClient,
+    MessageToClientDenied,
     Console,
     Position,
     PingPong,
 }
-
 
 public enum Operation
 {
@@ -24,12 +25,124 @@ public enum Operation
     ShiftRight
 }
 
+public class CheckSumReeder
+{
+    public virtual (uint, uint) ReadCheckSum(List<byte> message)
+    {
+        (uint, uint) checkSum;
+        checkSum.Item1 = 0;
+        checkSum.Item2 = 0;
+
+        int messageLenght = message.Count - sizeof(uint) * 2;
+
+        for (int i = 0; i < messageLenght; i++)
+        {
+            int operationType = message[i] % 4;
+
+            switch (operationType)
+            {
+                case (int)Operation.Add:
+
+                    checkSum.Item1 += message[i];
+                    checkSum.Item2 += message[i];
+
+                    break;
+
+                case (int)Operation.Substract:
+
+                    checkSum.Item1 -= message[i];
+                    checkSum.Item2 -= message[i];
+
+                    break;
+
+                case (int)Operation.ShiftRight:
+
+                    checkSum.Item1 >>= message[i];
+                    checkSum.Item2 >>= message[i];
+
+                    break;
+
+                case (int)Operation.ShiftLeft:
+
+                    checkSum.Item1 <<= message[i];
+                    checkSum.Item2 <<= message[i];
+
+                    break;
+            }
+        }
+
+        return (checkSum.Item1, checkSum.Item2);
+    }
+
+    public virtual bool CheckSumStatus(byte[] message)
+    {
+        (uint, uint) operation = ReadCheckSum(message.ToList<byte>());
+
+        int checksumStartIndex1 = message.Length - sizeof(uint) * 2;
+        int checksumStartIndex2 = message.Length - sizeof(uint);
+
+        if (operation.Item1 == BitConverter.ToUInt32(message, checksumStartIndex1) &&
+            operation.Item2 == BitConverter.ToUInt32(message, checksumStartIndex2))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
 
 public abstract class BaseMessage<PayLoadType>
 {
-    public Operation[] Encription = new Operation[] { Operation.Add, Operation.ShiftLeft, Operation.ShiftLeft, Operation.Substract, Operation.Add };
-
     public static int startPosition = 4;
+
+    public virtual void InsertCheckSum(List<byte> message)
+    {
+        (uint, uint) checkSum;
+        checkSum.Item1 = 0;
+        checkSum.Item2 = 0;
+
+        int messageLenght = message.Count;
+
+        for (int i = 0; i < messageLenght; i++)
+        {
+            int operationType = message[i] % 4;
+
+            switch (operationType)
+            {
+                case (int)Operation.Add:
+
+                    checkSum.Item1 += message[i];
+                    checkSum.Item2 += message[i];
+
+                    break;
+
+                case (int)Operation.Substract:
+
+                    checkSum.Item1 -= message[i];
+                    checkSum.Item2 -= message[i];
+
+                    break;
+
+                case (int)Operation.ShiftRight:
+
+                    checkSum.Item1 >>= message[i];
+                    checkSum.Item2 >>= message[i];
+
+                    break;
+
+                case (int)Operation.ShiftLeft:
+
+                    checkSum.Item1 <<= message[i];
+                    checkSum.Item2 <<= message[i];
+
+                    break;
+            }
+        }
+        message.AddRange(BitConverter.GetBytes(checkSum.Item1));
+        message.AddRange(BitConverter.GetBytes(checkSum.Item2));
+    }
 
     public PayLoadType data;
     public Action<PayLoadType> OnDeserialize;
@@ -41,14 +154,22 @@ public abstract class BaseMessage<PayLoadType>
 
 public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
 {
-    protected OrderableMessage(byte[] message)
+    public uint GetId(byte[] message)
     {
-        MsgID = BitConverter.ToUInt64(message, 4);
+        MsgID = BitConverter.ToUInt32(message, 4);
+
+        return MsgID;
     }
 
-    protected static ulong lastMsgID = 0;
+    public void SetId(List<byte> message)
+    {
+        message.AddRange(BitConverter.GetBytes(MsgID));
+        MsgID++;
+    }
 
-    protected ulong MsgID = 0;
+    protected static uint lastMsgID = 0;
+
+    protected uint MsgID = 0;
     protected static Dictionary<PayloadType, ulong> lastExecutedMsgID = new Dictionary<PayloadType, ulong>();
 }
 
@@ -83,7 +204,7 @@ public class NetMessageToClient : BaseMessage<List<Players>>
             for (int j = 0; j < clientIdLenght; j++)
             {
                 clientId += (char)message[currentPosition];
-                currentPosition += 1; 
+                currentPosition += 1;
             }
 
             Debug.Log(clientId + " : " + Id);
@@ -123,6 +244,8 @@ public class NetMessageToClient : BaseMessage<List<Players>>
                 outData.Add((byte)data[i].clientId[j]);
             }
         }
+
+        InsertCheckSum(outData);
 
         return outData.ToArray();
     }
@@ -165,8 +288,6 @@ public class NetMessageToServer : BaseMessage<(int, string)>
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
-        //
-
         outData.AddRange(BitConverter.GetBytes(data.Item1)); //ID
 
         outData.AddRange(BitConverter.GetBytes(data.Item2.Length)); //ClientID
@@ -175,6 +296,8 @@ public class NetMessageToServer : BaseMessage<(int, string)>
         {
             outData.Add((byte)data.Item2[i]);
         }
+
+        InsertCheckSum(outData);
 
         return outData.ToArray();
     }
@@ -217,6 +340,8 @@ public class NetVector3 : BaseMessage<Vector3>
         outData.AddRange(BitConverter.GetBytes(data.x));
         outData.AddRange(BitConverter.GetBytes(data.y));
         outData.AddRange(BitConverter.GetBytes(data.z));
+
+        InsertCheckSum(outData);
 
         return outData.ToArray();
     }
@@ -266,6 +391,40 @@ public class NetCode : BaseMessage<(int, string)>
         {
             outData.Add((byte)data.Item2[i]);
         }
+
+        InsertCheckSum(outData);
+        return outData.ToArray();
+    }
+}
+
+public class PingPong : BaseMessage<int>
+{
+    public override int Deserialize(byte[] message)
+    {
+        int outData;
+
+        outData = BitConverter.ToInt32(message, startPosition);
+
+        return outData;
+    }
+
+    public override int GetData()
+    {
+        return data;
+    }
+
+    public override MessageType GetMessageType()
+    {
+        return MessageType.PingPong;
+    }
+
+    public override byte[] Serialize()
+    {
+        List<byte> outData = new List<byte>();
+
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+        outData.AddRange(BitConverter.GetBytes(data));
+        InsertCheckSum((outData));
 
         return outData.ToArray();
     }

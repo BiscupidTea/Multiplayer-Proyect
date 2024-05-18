@@ -1,8 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using System.Net;
+﻿using UnityEngine.UI;
 
 public class NetworkScreen : MonoBehaviourSingleton<NetworkScreen>
 {
@@ -20,25 +16,22 @@ public class NetworkScreen : MonoBehaviourSingleton<NetworkScreen>
 
     void OnConnectBtnClick()
     {
-        IPAddress ipAddress = IPAddress.Parse(addressInputField.text);
-        int port = System.Convert.ToInt32(portInputField.text);
-        string playerNameString = playerName.text;
-
-        NetworkManager.Instance.StartClient(ipAddress, port, playerNameString);
-        
-        SwitchToChatScreen();
+        gameObject.SetActive(false);
+        LoadingScreen.Instance.gameObject.SetActive(true);
+        LoadingScreen.Instance.SwitchToLoadingScreen(addressInputField, portInputField, playerName);
     }
 
     void OnStartServerBtnClick()
     {
+        gameObject.SetActive(false);
         int port = System.Convert.ToInt32(portInputField.text);
         NetworkManager.Instance.StartServer(port);
-        SwitchToChatScreen();
+        LoadingScreen.Instance.SwitchToChatScreen();
     }
 
-    void SwitchToChatScreen()
+    public void SwitchToNetworkScreen()
     {
-        ChatScreen.Instance.gameObject.SetActive(true);
-        this.gameObject.SetActive(false);
+        ChatScreen.Instance.gameObject.SetActive(false);
+        this.gameObject.SetActive(true);
     }
 }
