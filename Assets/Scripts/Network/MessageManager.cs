@@ -9,6 +9,7 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
     private CheckSumReeder checkSumReeder = new CheckSumReeder();
     private NetCode netCode = new NetCode();
     private PingPong pingPong = new PingPong();
+    private ErrorMessage errorMessage = new ErrorMessage();
     private NetMessageToServer netMessageToServer = new NetMessageToServer();
     private NetMessageToClient netMessageToClient = new NetMessageToClient();
     bool PrivateMessage = false;
@@ -31,11 +32,9 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
 
                     if (CheckAlreadyUseName(newPlayer.clientId))
                     {
-                        List<byte> outData = new List<byte>();
+                        errorMessage.data = ErrorMessageType.UsernameAlredyUse;
 
-                        outData.AddRange(BitConverter.GetBytes((int)MessageType.MessageToClientDenied));
-
-                        NetworkManager.Instance.SendToClient(outData.ToArray(), Ip);
+                        NetworkManager.Instance.SendToClient(errorMessage.Serialize(), Ip);
 
                         Debug.Log("the Name " + newPlayer.clientId + " is aleredy in use");
                         PrivateMessage = true;
@@ -74,7 +73,7 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
                     PrivateMessage = false;
                     break;
 
-                case MessageType.MessageToClientDenied:
+                case MessageType.MessageError:
                     LoadingScreen.Instance.ShowBackToMenu();
                     Debug.Log("the Name is aleredy in use");
                     break;
@@ -180,6 +179,15 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         NetworkManager.Instance.lastMessageRecieved = DateTime.UtcNow;
         NetworkManager.Instance.initialized = true;
         NetworkManager.Instance.SendToServer(pingPong.Serialize());
+    }
+
+    public void SendNewListOfPlayers()
+    {
+        netMessageToClient.data = NetworkManager.Instance.players;
+
+        byte[] data = netMessageToClient.Serialize();
+
+        NetworkManager.Instance.Broadcast(data);
     }
 
     private bool CheckAlreadyUseName(string newPlayerName)

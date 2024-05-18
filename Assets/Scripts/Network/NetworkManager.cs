@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +10,7 @@ public class Client
 {
     public float timeStamp;
     public int id;
+    public bool connected;
     public IPEndPoint ipEndPoint;
     public DateTime LastMessageRecived;
 
@@ -16,6 +18,7 @@ public class Client
     {
         this.timeStamp = timeStamp;
         this.id = id;
+        this.connected = true;
         this.ipEndPoint = ipEndPoint;
         this.LastMessageRecived = DateTime.UtcNow;
     }
@@ -125,7 +128,18 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         if (ipToId.ContainsKey(ip))
         {
             Debug.Log("Removing client: " + ip.Address);
-            clients.Remove(ipToId[ip]);
+            //clients.Remove(ipToId[ip]);
+            clients.ToArray()[ipToId[ip]].Value.connected = false;
+
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (players.ToArray()[i].id == ipToId[ip])
+                {
+                    players.Remove(players.ToArray()[i]);
+                }
+            }
+
+            MessageManager.Instance.SendNewListOfPlayers();
         }
     }
 
@@ -179,9 +193,12 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         {
             for (int i = 0; i < clients.Count; i++)
             {
-                if ((DateTime.UtcNow - clients[i].LastMessageRecived).Seconds > timeOut)
+                if (clients[i].connected == true)
                 {
-                    RemoveClient(clients[i].ipEndPoint);
+                    if ((DateTime.UtcNow - clients[i].LastMessageRecived).Seconds > timeOut)
+                    {
+                        RemoveClient(clients[i].ipEndPoint);
+                    }
                 }
             }
         }

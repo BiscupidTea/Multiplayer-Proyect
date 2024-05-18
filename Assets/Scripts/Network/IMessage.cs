@@ -11,7 +11,7 @@ public enum MessageType
 {
     MessageToServer = 0,
     MessageToClient,
-    MessageToClientDenied,
+    MessageError,
     Console,
     Position,
     PingPong,
@@ -23,6 +23,11 @@ public enum Operation
     Substract,
     ShiftLeft,
     ShiftRight
+}
+
+public enum ErrorMessageType
+{
+    UsernameAlredyUse,
 }
 
 public class CheckSumReeder
@@ -424,6 +429,39 @@ public class PingPong : BaseMessage<int>
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
         outData.AddRange(BitConverter.GetBytes(data));
+        InsertCheckSum((outData));
+
+        return outData.ToArray();
+    }
+}
+
+public class ErrorMessage : BaseMessage<ErrorMessageType>
+{
+    public override ErrorMessageType Deserialize(byte[] message)
+    {
+        int outData;
+
+        outData = BitConverter.ToInt32(message, startPosition);
+
+        return (ErrorMessageType)outData;
+    }
+
+    public override ErrorMessageType GetData()
+    {
+        return data;
+    }
+
+    public override MessageType GetMessageType()
+    {
+        return MessageType.MessageError;
+    }
+
+    public override byte[] Serialize()
+    {
+        List<byte> outData = new List<byte>();
+
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+        outData.AddRange(BitConverter.GetBytes((int)data));
         InsertCheckSum((outData));
 
         return outData.ToArray();
