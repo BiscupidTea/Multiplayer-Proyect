@@ -3,8 +3,9 @@ using UnityEngine;
 using System;
 using System.Linq;
 
-// 0 - 3 = Message Type
-// 4 = Message
+// 0 = Message Type
+// 4 = Id Ordenable Message
+// 8 = Message
 // FinalMessage = CheckSum
 
 public enum MessageType
@@ -100,7 +101,8 @@ public class CheckSumReeder
 
 public abstract class BaseMessage<PayLoadType>
 {
-    public static int startPosition = 4;
+    public static int ordenablePosition = 4;
+    public static int messagePosition = 8;
 
     public virtual void InsertCheckSum(List<byte> message)
     {
@@ -161,7 +163,7 @@ public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
 {
     public uint GetId(byte[] message)
     {
-        MsgID = BitConverter.ToUInt32(message, 4);
+        MsgID = BitConverter.ToUInt32(message, ordenablePosition);
 
         return MsgID;
     }
@@ -178,11 +180,11 @@ public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
     protected static Dictionary<PayloadType, ulong> lastExecutedMsgID = new Dictionary<PayloadType, ulong>();
 }
 
-public class NetMessageToClient : BaseMessage<List<Players>>
+public class NetMessageToClient : OrderableMessage<List<Players>>
 {
     public override List<Players> Deserialize(byte[] message)
     {
-        int currentPosition = startPosition;
+        int currentPosition = messagePosition;
 
         int totalPlayers = BitConverter.ToInt32(message, currentPosition);
         Debug.Log("total player: " + totalPlayers);
@@ -235,6 +237,9 @@ public class NetMessageToClient : BaseMessage<List<Players>>
         //message type
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
+        //set id
+        SetId(outData);
+
         //total Players
         outData.AddRange(BitConverter.GetBytes(data.Count));
 
@@ -256,7 +261,7 @@ public class NetMessageToClient : BaseMessage<List<Players>>
     }
 }
 
-public class NetMessageToServer : BaseMessage<(int, string)>
+public class NetMessageToServer : OrderableMessage<(int, string)>
 {
     //ID
     //ClientID
@@ -265,14 +270,14 @@ public class NetMessageToServer : BaseMessage<(int, string)>
     {
         (int, string) outData;
 
-        outData.Item1 = BitConverter.ToInt32(message, startPosition); //ID
+        outData.Item1 = BitConverter.ToInt32(message, messagePosition); //ID
 
         outData.Item2 = "";//ClientID
-        int messageLenght = BitConverter.ToInt32(message, startPosition + 4);
+        int messageLenght = BitConverter.ToInt32(message, messagePosition + 4);
 
         for (int i = 0; i < messageLenght; i++)
         {
-            outData.Item2 += (char)message[startPosition + 8 + i];
+            outData.Item2 += (char)message[messagePosition + 8 + i];
         }
         return outData;
     }
@@ -293,6 +298,9 @@ public class NetMessageToServer : BaseMessage<(int, string)>
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
+        //set id
+        SetId(outData);
+
         outData.AddRange(BitConverter.GetBytes(data.Item1)); //ID
 
         outData.AddRange(BitConverter.GetBytes(data.Item2.Length)); //ClientID
@@ -308,7 +316,7 @@ public class NetMessageToServer : BaseMessage<(int, string)>
     }
 }
 
-public class NetVector3 : BaseMessage<Vector3>
+public class NetVector3 : OrderableMessage<Vector3>
 {
     public NetVector3(Vector3 data)
     {
@@ -319,9 +327,9 @@ public class NetVector3 : BaseMessage<Vector3>
     {
         Vector3 outData;
 
-        outData.x = BitConverter.ToSingle(message, startPosition);
-        outData.y = BitConverter.ToSingle(message, startPosition + 4);
-        outData.z = BitConverter.ToSingle(message, startPosition + 8);
+        outData.x = BitConverter.ToSingle(message, messagePosition);
+        outData.y = BitConverter.ToSingle(message, messagePosition + 4);
+        outData.z = BitConverter.ToSingle(message, messagePosition + 8);
 
         return outData;
     }
@@ -341,7 +349,10 @@ public class NetVector3 : BaseMessage<Vector3>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
-        //outData.AddRange();
+
+        //set id
+        SetId(outData);
+
         outData.AddRange(BitConverter.GetBytes(data.x));
         outData.AddRange(BitConverter.GetBytes(data.y));
         outData.AddRange(BitConverter.GetBytes(data.z));
@@ -352,22 +363,22 @@ public class NetVector3 : BaseMessage<Vector3>
     }
 }
 
-public class NetCode : BaseMessage<(int, string)>
+public class NetCode : OrderableMessage<(int, string)>
 {
     public override (int, string) Deserialize(byte[] message)
     {
         (int, string) outData;
 
         //PlayerID
-        outData.Item1 = BitConverter.ToInt32(message, startPosition);
+        outData.Item1 = BitConverter.ToInt32(message, messagePosition);
 
         //message
         outData.Item2 = "";
-        int messageLenght = BitConverter.ToInt32(message, startPosition + 4);
+        int messageLenght = BitConverter.ToInt32(message, messagePosition + 4);
 
         for (int i = 0; i < messageLenght; i++)
         {
-            outData.Item2 += (char)message[startPosition + 8 + i];
+            outData.Item2 += (char)message[messagePosition + 8 + i];
         }
 
         return outData;
@@ -389,6 +400,9 @@ public class NetCode : BaseMessage<(int, string)>
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
+        //set id
+        SetId(outData);
+
         outData.AddRange(BitConverter.GetBytes(data.Item1));
         outData.AddRange(BitConverter.GetBytes(data.Item2.Length));
 
@@ -402,13 +416,13 @@ public class NetCode : BaseMessage<(int, string)>
     }
 }
 
-public class PingPong : BaseMessage<int>
+public class PingPong : OrderableMessage<int>
 {
     public override int Deserialize(byte[] message)
     {
         int outData;
 
-        outData = BitConverter.ToInt32(message, startPosition);
+        outData = BitConverter.ToInt32(message, messagePosition);
 
         return outData;
     }
@@ -428,6 +442,7 @@ public class PingPong : BaseMessage<int>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+        SetId(outData);
         outData.AddRange(BitConverter.GetBytes(data));
         InsertCheckSum((outData));
 
@@ -435,13 +450,13 @@ public class PingPong : BaseMessage<int>
     }
 }
 
-public class ErrorMessage : BaseMessage<ErrorMessageType>
+public class ErrorMessage : OrderableMessage<ErrorMessageType>
 {
     public override ErrorMessageType Deserialize(byte[] message)
     {
         int outData;
 
-        outData = BitConverter.ToInt32(message, startPosition);
+        outData = BitConverter.ToInt32(message, messagePosition);
 
         return (ErrorMessageType)outData;
     }
@@ -461,6 +476,10 @@ public class ErrorMessage : BaseMessage<ErrorMessageType>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        //set id
+        SetId(outData);
+
         outData.AddRange(BitConverter.GetBytes((int)data));
         InsertCheckSum((outData));
 

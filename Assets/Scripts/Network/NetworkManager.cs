@@ -127,8 +127,7 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
     {
         if (ipToId.ContainsKey(ip))
         {
-            Debug.Log("Removing client: " + ip.Address);
-            //clients.Remove(ipToId[ip]);
+            Debug.Log("Removing client: " + players.ToArray()[ipToId[ip]].clientId);
             clients.ToArray()[ipToId[ip]].Value.connected = false;
 
             for (int i = 0; i < players.Count; i++)
