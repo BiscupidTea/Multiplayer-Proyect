@@ -32,8 +32,6 @@ public class PlayerShoot : MonoBehaviour
 
     private void Shoot()
     {
-        Instantiate(ShootPrefab, transform.position + (transform.forward * shootPosition.x) + (transform.up * shootPosition.y), transform.rotation);
-
         playerActionMade.data.Item1 = PlayerActionMade.Shoot;
         playerActionMade.data.Item2 = id;
         playerActionMade.data.Item3 = transform.position + transform.forward * shootPosition.x + transform.up * shootPosition.y;

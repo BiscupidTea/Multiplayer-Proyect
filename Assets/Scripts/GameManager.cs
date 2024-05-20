@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 public class GameManager : MonoBehaviourSingleton<GameManager>
 {
@@ -15,6 +16,9 @@ public class GameManager : MonoBehaviourSingleton<GameManager>
     private float timer;
     private NetTimer netTimer = new NetTimer();
     [SerializeField] private Text Timer;
+
+    int playersAlive = 0;
+    int playerIdWin = 0;
     public void StartGame()
     {
         CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.chatScreen);
@@ -53,6 +57,7 @@ public class GameManager : MonoBehaviourSingleton<GameManager>
         }
     }
 
+
     public void HitPlayer(Vector3 position, int id)
     {
         if (NetworkManager.Instance.playerData.id != id || NetworkManager.Instance.isServer)
@@ -63,23 +68,23 @@ public class GameManager : MonoBehaviourSingleton<GameManager>
 
     public void ShootPlayer(Vector3 position, int id)
     {
-        if (NetworkManager.Instance.playerData.id != id || NetworkManager.Instance.isServer)
-        {
-            Instantiate(playerSO.shootPrefab, position, playerList[id].gameObject.transform.rotation);
-        }
+        Instantiate(playerSO.shootPrefab, position, playerList[id].gameObject.transform.rotation);
     }
 
     public void KillPlayer(int id)
     {
         playerList[id].gameObject.SetActive(false);
         playerList[id].gameObject.GetComponent<PlayerController>().isAlive = false;
-        checkWinCondition();
+        if (NetworkManager.Instance.isServer)
+        {
+            checkWinCondition();
+        }
     }
 
     private void checkWinCondition()
     {
-        int playersAlive = 0;
-        int playerIdWin = 0;
+        playersAlive = 0;
+        playerIdWin = 0;
 
         for (int i = 0; i < playerList.Length; i++)
         {
@@ -99,9 +104,36 @@ public class GameManager : MonoBehaviourSingleton<GameManager>
 
     public void ShowWin(int id)
     {
-        Debug.Log(NetworkManager.Instance.players[id].clientId);
-        Debug.Log(id);
-        WinScreen.Instance.StartTimer(NetworkManager.Instance.players[id].clientId);
+        string message = "";
+        if (playersAlive > 1)
+        {
+            switch (id)
+            {
+                case 0:
+                    Debug.Log("Player blue win!");
+                    message = "Player blue win!";
+                    break;
+                case 1:
+                    Debug.Log("Player red win!");
+                    message = "Player red win!";
+                    break;
+                case 2:
+                    Debug.Log("Player green win!");
+                    message = "Player green win!";
+                    break;
+                case 3:
+                    Debug.Log("Player yellow win!");
+                    message = "Player yellow win!";
+                    break;
+                default:
+                    break;
+            }
+        }
+        else
+        {
+            message = "tie!";
+        }
+        WinScreen.Instance.StartTimer(message);
         gameObject.SetActive(false);
     }
 

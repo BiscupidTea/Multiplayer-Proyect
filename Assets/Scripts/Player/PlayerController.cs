@@ -32,13 +32,13 @@ public class PlayerController : MonoBehaviour
     {
         health--;
 
-        if (health <= 0 && NetworkManager.Instance.isServer)
+        if (health <= 0)
         {
             isAlive = false;
             playerActionMade.data.Item1 = PlayerActionMade.Death;
             playerActionMade.data.Item2 = id;
             playerActionMade.data.Item3 = Vector3.zero;
-            NetworkManager.Instance.Broadcast(playerActionMade.Serialize());
+            NetworkManager.Instance.SendToServer(playerActionMade.Serialize());
             GameManager.Instance.KillPlayer(id);
         }
         else
@@ -46,7 +46,7 @@ public class PlayerController : MonoBehaviour
             playerActionMade.data.Item1 = PlayerActionMade.hit;
             playerActionMade.data.Item2 = id;
             playerActionMade.data.Item3 = new Vector3(health, 0, 0);
-            NetworkManager.Instance.Broadcast(playerActionMade.Serialize());
+            NetworkManager.Instance.SendToServer(playerActionMade.Serialize());
         }
     }
 }

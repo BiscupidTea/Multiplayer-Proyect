@@ -4,6 +4,7 @@ using UnityEngine;
 public class ShootLogic : MonoBehaviour
 {
     [SerializeField] private float shootSpeed;
+    public int id;
 
     private void Start()
     {
