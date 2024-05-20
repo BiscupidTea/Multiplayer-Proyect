@@ -1,54 +1,36 @@
-using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 
-public class Lobby : MonoBehaviourSingleton<Lobby>
+public class WinScreen : MonoBehaviourSingleton<WinScreen>
 {
-    [SerializeField] private Text[] playerSpaces;
     [SerializeField] private bool Start = false;
     [SerializeField] private float maxTime;
     private float timer;
     private NetTimer netTimer = new NetTimer();
-    private NetServerActionMade actionMade = new NetServerActionMade();
     [SerializeField] private Text Timer;
+    [SerializeField] private Text Winner;
+    private NetServerActionMade actionMade = new NetServerActionMade();
 
     protected override void Initialize()
     {
-        for (int i = 0; i < playerSpaces.Length; i++)
-        {
-            playerSpaces[i].text = "Empty";
-        }
-
         this.gameObject.SetActive(false);
     }
 
-    public void UpdateLobby()
+    public void StartTimer(string winnerPlayer)
     {
-        for (int i = 0; i < playerSpaces.Length; i++)
-        {
-            if (i < NetworkManager.Instance.players.Count)
-            {
-                playerSpaces[i].text = NetworkManager.Instance.players.ToArray()[i].clientId;
-            }
-            else
-            {
-                playerSpaces[i].text = "Empty";
-            }
-        }
+        this.gameObject.SetActive(true);
 
-        if (NetworkManager.Instance.players.Count >= 2 && NetworkManager.Instance.isServer && !Start)
-        {
-            StartTimer();
-        }
-    }
-
-    private void StartTimer()
-    {
         Start = true;
         timer = maxTime;
 
         netTimer.data = timer;
         NetworkManager.Instance.Broadcast(netTimer.Serialize());
+
+        Winner.text = winnerPlayer;
     }
 
     private void RestartTimer()
@@ -90,11 +72,9 @@ public class Lobby : MonoBehaviourSingleton<Lobby>
             }
             else
             {
-                actionMade.data.Item1 = ServerActionMade.StartGame;
+                actionMade.data.Item1 = ServerActionMade.EndGame;
                 actionMade.data.Item2 = -1;
                 NetworkManager.Instance.Broadcast(actionMade.Serialize());
-                GameManager.Instance.StartGame();
-                Timer.text = "waiting other players";
             }
         }
     }

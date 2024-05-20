@@ -19,7 +19,8 @@ public enum MessageType
     Rotation,
     PingPong,
     Time,
-    ActionMadeBy,
+    ServerAction,
+    PlayerAction,
 }
 
 public enum Operation
@@ -41,6 +42,14 @@ public enum ServerActionMade
 {
     StartGame,
     EndGame,
+    close,
+}
+
+public enum PlayerActionMade
+{
+    Shoot,
+    hit,
+    Death,
 }
 
 public class CheckSumReeder
@@ -540,25 +549,26 @@ public class NetTimer : OrderableMessage<float>
     }
 }
 
-public class NetServerActionMade : OrderableMessage<ServerActionMade>
+public class NetServerActionMade : OrderableMessage<(ServerActionMade, int)>
 {
-    public override ServerActionMade Deserialize(byte[] message)
+    public override (ServerActionMade, int) Deserialize(byte[] message)
     {
-        int outData;
+        (ServerActionMade, int) outData;
 
-        outData = BitConverter.ToInt32(message, messagePosition);
+        outData.Item1 = (ServerActionMade)BitConverter.ToInt32(message, messagePosition);
+        outData.Item2 = BitConverter.ToInt32(message, messagePosition + 4);
 
-        return (ServerActionMade)outData;
+        return outData;
     }
 
-    public override ServerActionMade GetData()
+    public override (ServerActionMade, int) GetData()
     {
         return data;
     }
 
     public override MessageType GetMessageType()
     {
-        return MessageType.ActionMadeBy;
+        return MessageType.ServerAction;
     }
 
     public override byte[] Serialize()
@@ -569,7 +579,53 @@ public class NetServerActionMade : OrderableMessage<ServerActionMade>
 
         SetId(outData); //set id
 
-        outData.AddRange(BitConverter.GetBytes((int)data));
+        outData.AddRange(BitConverter.GetBytes((int)data.Item1));
+        outData.AddRange(BitConverter.GetBytes(data.Item2));
+        InsertCheckSum(outData);
+
+        return outData.ToArray();
+    }
+}
+
+public class NetPlayerActionMade : OrderableMessage<(PlayerActionMade, int, Vector3)>
+{
+    public override (PlayerActionMade, int, Vector3) Deserialize(byte[] message)
+    {
+        (PlayerActionMade, int, Vector3) outData;
+
+        outData.Item1 = (PlayerActionMade)BitConverter.ToInt32(message, messagePosition);
+        outData.Item2 = BitConverter.ToInt32(message, messagePosition + 4);
+        outData.Item3.x = BitConverter.ToSingle(message, messagePosition + 8);
+        outData.Item3.y = BitConverter.ToSingle(message, messagePosition + 12);
+        outData.Item3.z = BitConverter.ToSingle(message, messagePosition + 16);
+
+        return outData;
+    }
+
+    public override (PlayerActionMade, int, Vector3) GetData()
+    {
+        return data;
+    }
+
+    public override MessageType GetMessageType()
+    {
+        return MessageType.PlayerAction;
+    }
+
+    public override byte[] Serialize()
+    {
+        List<byte> outData = new List<byte>();
+
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        SetId(outData); //set id
+
+        outData.AddRange(BitConverter.GetBytes((int)data.Item1));
+        outData.AddRange(BitConverter.GetBytes(data.Item2));
+        outData.AddRange(BitConverter.GetBytes(data.Item3.x));
+        outData.AddRange(BitConverter.GetBytes(data.Item3.y));
+        outData.AddRange(BitConverter.GetBytes(data.Item3.z));  
+
         InsertCheckSum(outData);
 
         return outData.ToArray();

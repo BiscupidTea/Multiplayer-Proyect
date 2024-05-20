@@ -114,7 +114,7 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         }
     }
 
-    void Disconect()
+    public void Disconect()
     {
         clients.Clear();
         

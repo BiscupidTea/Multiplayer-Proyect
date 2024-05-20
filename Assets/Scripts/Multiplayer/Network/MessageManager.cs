@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using UnityEditor;
 using UnityEngine;
 
 public class MessageManager : MonoBehaviourSingleton<MessageManager>
@@ -11,7 +12,8 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
     private NetVector3 netVector3 = new NetVector3();
     private NetQuaternion netQuaternion = new NetQuaternion();
     private ErrorMessage errorMessage = new ErrorMessage();
-    private NetServerActionMade netActionMade = new NetServerActionMade();
+    private NetServerActionMade neServertActionMade = new NetServerActionMade();
+    private NetPlayerActionMade netPlayerActionMade = new NetPlayerActionMade();
     private NetMessageToServer netMessageToServer = new NetMessageToServer();
     private NetMessageToClient netMessageToClient = new NetMessageToClient();
     bool PrivateMessage = false;
@@ -138,7 +140,7 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
                 case MessageType.Time:
                     if (GameManager.Instance.playing)
                     {
-
+                        GameManager.Instance.SetTime(netTimer.Deserialize(data));
                     }
                     else
                     {
@@ -170,13 +172,37 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
                     PrivateMessage = true;
                     break;
 
-                case MessageType.ActionMadeBy:
-                    switch (netActionMade.Deserialize(data))
+                case MessageType.ServerAction:
+                    switch (neServertActionMade.Deserialize(data).Item1)
                     {
                         case ServerActionMade.StartGame:
                             GameManager.Instance.StartGame();
                             break;
                         case ServerActionMade.EndGame:
+                            GameManager.Instance.ShowWin(neServertActionMade.Deserialize(data).Item2);
+                            break;
+                        case ServerActionMade.close:
+
+                            break;
+                    }
+                    break;
+
+                case MessageType.PlayerAction:
+                    switch (netPlayerActionMade.Deserialize(data).Item1)
+                    {
+                        case PlayerActionMade.Shoot:
+                            Debug.Log("player shoot");
+                            GameManager.Instance.ShootPlayer(netPlayerActionMade.Deserialize(data).Item3, netPlayerActionMade.Deserialize(data).Item2);
+                            break;
+
+                        case PlayerActionMade.hit:
+                            Debug.Log("player hit");
+                            GameManager.Instance.HitPlayer(netPlayerActionMade.Deserialize(data).Item3, netPlayerActionMade.Deserialize(data).Item2);
+                            break;
+
+                        case PlayerActionMade.Death:
+                            Debug.Log("player death");
+                            GameManager.Instance.KillPlayer(netPlayerActionMade.Deserialize(data).Item2);
                             break;
                     }
                     break;

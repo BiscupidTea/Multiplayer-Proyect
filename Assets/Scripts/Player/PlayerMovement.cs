@@ -5,11 +5,10 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     public int id;
-    [SerializeField] private int moveSpeed = 5;
-    [SerializeField] private int rotationSpeed = 45;
+    public float moveSpeed;
+    public float rotationSpeed;
     private NetVector3 position = new NetVector3();
     private NetQuaternion rotation = new NetQuaternion();
-    private Vector2 movement;
     private Rigidbody rb;
 
     private void Start()
