@@ -5,7 +5,8 @@ using System.Linq;
 
 // 0 = Message Type
 // 4 = Id Ordenable Message
-// 8 = Message
+// 8 = bool Ordenable Message
+// 12 = Message
 // FinalMessage = CheckSum
 
 public enum MessageType
@@ -15,7 +16,10 @@ public enum MessageType
     MessageError,
     Console,
     Position,
+    Rotation,
     PingPong,
+    Time,
+    ActionMadeBy,
 }
 
 public enum Operation
@@ -29,6 +33,14 @@ public enum Operation
 public enum ErrorMessageType
 {
     UsernameAlredyUse,
+    ServerFull,
+    GameStarted,
+}
+
+public enum ServerActionMade
+{
+    StartGame,
+    EndGame,
 }
 
 public class CheckSumReeder
@@ -316,25 +328,21 @@ public class NetMessageToServer : OrderableMessage<(int, string)>
     }
 }
 
-public class NetVector3 : OrderableMessage<Vector3>
+public class NetVector3 : OrderableMessage<(Vector3, int)>
 {
-    public NetVector3(Vector3 data)
+    public override (Vector3, int) Deserialize(byte[] message)
     {
-        this.data = data;
-    }
+        (Vector3, int) outData;
 
-    public override Vector3 Deserialize(byte[] message)
-    {
-        Vector3 outData;
-
-        outData.x = BitConverter.ToSingle(message, messagePosition);
-        outData.y = BitConverter.ToSingle(message, messagePosition + 4);
-        outData.z = BitConverter.ToSingle(message, messagePosition + 8);
+        outData.Item2 = BitConverter.ToInt32(message, messagePosition);
+        outData.Item1.x = BitConverter.ToSingle(message, messagePosition + 4);
+        outData.Item1.y = BitConverter.ToSingle(message, messagePosition + 8);
+        outData.Item1.z = BitConverter.ToSingle(message, messagePosition + 12);
 
         return outData;
     }
 
-    public override Vector3 GetData()
+    public override (Vector3, int) GetData()
     {
         return data;
     }
@@ -350,12 +358,57 @@ public class NetVector3 : OrderableMessage<Vector3>
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
-        //set id
         SetId(outData);
 
-        outData.AddRange(BitConverter.GetBytes(data.x));
-        outData.AddRange(BitConverter.GetBytes(data.y));
-        outData.AddRange(BitConverter.GetBytes(data.z));
+        outData.AddRange(BitConverter.GetBytes(data.Item2));
+        outData.AddRange(BitConverter.GetBytes(data.Item1.x));
+        outData.AddRange(BitConverter.GetBytes(data.Item1.y));
+        outData.AddRange(BitConverter.GetBytes(data.Item1.z));
+
+        InsertCheckSum(outData);
+
+        return outData.ToArray();
+    }
+}
+
+public class NetQuaternion : OrderableMessage<(Quaternion, int)>
+{
+    public override (Quaternion, int) Deserialize(byte[] message)
+    {
+        (Quaternion, int) outData;
+
+        outData.Item2 = BitConverter.ToInt32(message, messagePosition);
+        outData.Item1.x = BitConverter.ToSingle(message, messagePosition + 4);
+        outData.Item1.y = BitConverter.ToSingle(message, messagePosition + 8);
+        outData.Item1.z = BitConverter.ToSingle(message, messagePosition + 12);
+        outData.Item1.w = BitConverter.ToSingle(message, messagePosition + 16);
+
+        return outData;
+    }
+
+    public override (Quaternion, int) GetData()
+    {
+        return data;
+    }
+
+    public override MessageType GetMessageType()
+    {
+        return MessageType.Rotation;
+    }
+
+    public override byte[] Serialize()
+    {
+        List<byte> outData = new List<byte>();
+
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        SetId(outData);
+
+        outData.AddRange(BitConverter.GetBytes(data.Item2));
+        outData.AddRange(BitConverter.GetBytes(data.Item1.x));
+        outData.AddRange(BitConverter.GetBytes(data.Item1.y));
+        outData.AddRange(BitConverter.GetBytes(data.Item1.z));
+        outData.AddRange(BitConverter.GetBytes(data.Item1.w));
 
         InsertCheckSum(outData);
 
@@ -445,6 +498,79 @@ public class PingPong : OrderableMessage<int>
         SetId(outData);
         outData.AddRange(BitConverter.GetBytes(data));
         InsertCheckSum((outData));
+
+        return outData.ToArray();
+    }
+}
+
+public class NetTimer : OrderableMessage<float>
+{
+    public override float Deserialize(byte[] message)
+    {
+        float outData;
+
+        outData = BitConverter.ToInt32(message, messagePosition);
+
+        return outData;
+    }
+
+    public override float GetData()
+    {
+        return data;
+    }
+
+    public override MessageType GetMessageType()
+    {
+        return MessageType.Time;
+    }
+
+    public override byte[] Serialize()
+    {
+        List<byte> outData = new List<byte>();
+
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        SetId(outData);
+
+        outData.AddRange(BitConverter.GetBytes((int)data));
+
+        InsertCheckSum(outData);
+
+        return outData.ToArray();
+    }
+}
+
+public class NetServerActionMade : OrderableMessage<ServerActionMade>
+{
+    public override ServerActionMade Deserialize(byte[] message)
+    {
+        int outData;
+
+        outData = BitConverter.ToInt32(message, messagePosition);
+
+        return (ServerActionMade)outData;
+    }
+
+    public override ServerActionMade GetData()
+    {
+        return data;
+    }
+
+    public override MessageType GetMessageType()
+    {
+        return MessageType.ActionMadeBy;
+    }
+
+    public override byte[] Serialize()
+    {
+        List<byte> outData = new List<byte>();
+
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        SetId(outData); //set id
+
+        outData.AddRange(BitConverter.GetBytes((int)data));
+        InsertCheckSum(outData);
 
         return outData.ToArray();
     }

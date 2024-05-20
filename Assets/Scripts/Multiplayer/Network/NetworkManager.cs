@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 [Serializable]
@@ -76,7 +77,8 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
     public DateTime lastMessageRecieved = DateTime.UtcNow;
     public DateTime lastMessageSended = DateTime.UtcNow;
     private int timeOut = 5;
-    public bool initialized;
+    public bool initialized = false;
+    public bool gameStarted = false;
 
     public void StartServer(int port)
     {
@@ -115,6 +117,7 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
     void Disconect()
     {
         clients.Clear();
+        
         initialized = false;
     }
 
@@ -123,11 +126,11 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         players.Add(newPlayer);
     }
 
-    public void RemoveClient(IPEndPoint ip)
+    public void RemoveClient(IPEndPoint ip, string reason)
     {
         if (ipToId.ContainsKey(ip))
         {
-            Debug.Log("Removing client: " + players.ToArray()[ipToId[ip]].clientId);
+            Debug.Log("Removing client: " + players.ToArray()[ipToId[ip]].clientId + " - reason: " + reason);
             clients.ToArray()[ipToId[ip]].Value.connected = false;
 
             for (int i = 0; i < players.Count; i++)
@@ -182,9 +185,11 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
             if ((DateTime.UtcNow - lastMessageRecieved).Seconds > timeOut)
             {
                 Debug.Log((DateTime.UtcNow - lastMessageRecieved).Seconds);
-                NetworkScreen.Instance.SwitchToNetworkScreen();
                 Disconect();
                 Debug.Log("disconected from server = ");
+
+                CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.networkScreen);
+
             }
         }
 
@@ -196,7 +201,7 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
                 {
                     if ((DateTime.UtcNow - clients[i].LastMessageRecived).Seconds > timeOut)
                     {
-                        RemoveClient(clients[i].ipEndPoint);
+                        RemoveClient(clients[i].ipEndPoint, "Time Out");
                     }
                 }
             }

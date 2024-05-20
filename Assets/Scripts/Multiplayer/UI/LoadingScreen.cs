@@ -1,9 +1,11 @@
 using System.Net;
 using UnityEngine;
+using System.Collections;
 using UnityEngine.UI;
 
 public class LoadingScreen : MonoBehaviourSingleton<LoadingScreen>
 {
+    public Text LoadingMessage;
     public Text messages;
     public Button backToMenuBtn;
 
@@ -28,30 +30,40 @@ public class LoadingScreen : MonoBehaviourSingleton<LoadingScreen>
         playerNameString = playerName.text;
 
         NetworkManager.Instance.StartClient(ipAddress, port, playerNameString);
+        StartCoroutine(UpdateTimer());
     }
 
-    public void connectToChat()
+    IEnumerator UpdateTimer()
     {
-        Debug.Log("Connect Chat");
+        yield return new WaitForSeconds(0.7f);
+        switch (LoadingMessage.text)
+        {
+            case "Loading.":
+                LoadingMessage.text = "Loading..";
+                break;
 
-        SwitchToChatScreen();
+            case "Loading..":
+                LoadingMessage.text = "Loading...";
+                break;
+
+            case "Loading...":
+                LoadingMessage.text = "Loading.";
+                break;
+        }
+
+        StartCoroutine(UpdateTimer());
     }
 
-    public void SwitchToChatScreen()
-    {
-        ChatScreen.Instance.gameObject.SetActive(true);
-        this.gameObject.SetActive(false);
-    }
-
-    public void ShowBackToMenu()
+    public void ShowErrorMessage(string errorMessage)
     {
         messages.gameObject.SetActive(true);
+        messages.text = errorMessage;
+        Debug.LogWarning(errorMessage);
         backToMenuBtn.gameObject.SetActive(true);
     }
 
     public void BackToMenu()
     {
-        NetworkScreen.Instance.gameObject.SetActive(true);
-        this.gameObject.SetActive(false);
+        CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.networkScreen);
     }
 }

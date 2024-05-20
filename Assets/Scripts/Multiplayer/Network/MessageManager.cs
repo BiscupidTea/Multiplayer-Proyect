@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using UnityEngine;
 
@@ -9,7 +7,11 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
     private CheckSumReeder checkSumReeder = new CheckSumReeder();
     private NetCode netCode = new NetCode();
     private PingPong pingPong = new PingPong();
+    private NetTimer netTimer = new NetTimer();
+    private NetVector3 netVector3 = new NetVector3();
+    private NetQuaternion netQuaternion = new NetQuaternion();
     private ErrorMessage errorMessage = new ErrorMessage();
+    private NetServerActionMade netActionMade = new NetServerActionMade();
     private NetMessageToServer netMessageToServer = new NetMessageToServer();
     private NetMessageToClient netMessageToClient = new NetMessageToClient();
     bool PrivateMessage = false;
@@ -25,33 +27,50 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
             {
                 case MessageType.MessageToServer:
 
-                    Players newPlayer = new Players(netMessageToServer.Deserialize(data).Item2, netMessageToServer.Deserialize(data).Item1);
-
-                    newPlayer.id = NetworkManager.Instance.clientId;
-                    newPlayer.clientId = netMessageToServer.Deserialize(data).Item2;
-
-                    if (CheckAlreadyUseName(newPlayer.clientId))
+                    if (!NetworkManager.Instance.gameStarted)
                     {
-                        errorMessage.data = ErrorMessageType.UsernameAlredyUse;
+                        Players newPlayer = new Players(netMessageToServer.Deserialize(data).Item2, netMessageToServer.Deserialize(data).Item1);
 
-                        NetworkManager.Instance.SendToClient(errorMessage.Serialize(), Ip);
+                        newPlayer.id = NetworkManager.Instance.clientId;
+                        newPlayer.clientId = netMessageToServer.Deserialize(data).Item2;
 
-                        Debug.Log("the Name " + newPlayer.clientId + " is aleredy in use");
-                        PrivateMessage = true;
+                        if (CheckAlreadyUseName(newPlayer.clientId))
+                        {
+                            data = ThrowErrorMessage(ErrorMessageType.UsernameAlredyUse);
+
+                            PrivateMessage = true;
+                        }
+                        else
+                        {
+                            Debug.Log(NetworkManager.Instance.players.Count + " < " + 4);
+                            if (NetworkManager.Instance.players.Count <= 4)
+                            {
+                                NetworkManager.Instance.AddClient(Ip);
+                                NetworkManager.Instance.addPlayer(newPlayer);
+
+                                netMessageToClient.data = NetworkManager.Instance.players;
+
+                                data = netMessageToClient.Serialize();
+
+                                NetworkManager.Instance.clientId++;
+                                Lobby.Instance.UpdateLobby();
+                                Debug.Log("add new client = Client Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].clientId + " - Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].id);
+                                PrivateMessage = false;
+                            }
+                            else
+                            {
+                                data = ThrowErrorMessage(ErrorMessageType.ServerFull);
+
+                                PrivateMessage = true;
+                            }
+                        }
                     }
                     else
                     {
-                        NetworkManager.Instance.AddClient(Ip);
-                        NetworkManager.Instance.addPlayer(newPlayer);
-
-                        netMessageToClient.data = NetworkManager.Instance.players;
-
-                        data = netMessageToClient.Serialize();
-
-                        NetworkManager.Instance.clientId++;
-                        Debug.Log("add new client = Client Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].clientId + " - Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].id);
-                        PrivateMessage = false;
+                        data = ThrowErrorMessage(ErrorMessageType.GameStarted);
+                        PrivateMessage = true;
                     }
+
                     break;
 
                 case MessageType.MessageToClient:
@@ -63,19 +82,42 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
                         if (NetworkManager.Instance.players[i].clientId == NetworkManager.Instance.playerData.clientId)
                         {
                             NetworkManager.Instance.playerData.id = NetworkManager.Instance.players[i].id;
-                            LoadingScreen.Instance.connectToChat();
                             break;
                         }
                     }
 
-                    StartPingPong();
+                    if (!NetworkManager.Instance.initialized)
+                    {
+                        StartPingPong();
+                        CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.lobby);
+                        NetworkManager.Instance.initialized = true;
+                    }
+
+                    Lobby.Instance.UpdateLobby();
 
                     PrivateMessage = false;
                     break;
 
                 case MessageType.MessageError:
-                    LoadingScreen.Instance.ShowBackToMenu();
-                    Debug.Log("the Name is aleredy in use");
+                    Debug.Log("Error message recived");
+
+                    switch (errorMessage.Deserialize(data))
+                    {
+                        case ErrorMessageType.UsernameAlredyUse:
+                            LoadingScreen.Instance.ShowErrorMessage("Username Already use");
+                            break;
+
+                        case ErrorMessageType.ServerFull:
+                            LoadingScreen.Instance.ShowErrorMessage("Server full");
+                            break;
+
+                        case ErrorMessageType.GameStarted:
+                            LoadingScreen.Instance.ShowErrorMessage("Game alredy Started");
+                            break;
+
+                        default:
+                            break;
+                    }
                     break;
 
                 case MessageType.Console:
@@ -93,8 +135,30 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
                     PrivateMessage = false;
                     break;
 
-                case MessageType.Position:
+                case MessageType.Time:
+                    if (GameManager.Instance.playing)
+                    {
 
+                    }
+                    else
+                    {
+                        Lobby.Instance.SetTime(netTimer.Deserialize(data));
+                    }
+                    PrivateMessage = false;
+                    break;
+
+                case MessageType.Position:
+                    netVector3.data = netVector3.Deserialize(data);
+                    GameManager.Instance.MovePlayer(netVector3.data.Item1, netVector3.data.Item2);
+
+                    PrivateMessage = false;
+                    break;
+
+                case MessageType.Rotation:
+                    netQuaternion.data = netQuaternion.Deserialize(data);
+                    GameManager.Instance.RotatePlayer(netQuaternion.data.Item1, netVector3.data.Item2);
+
+                    PrivateMessage = false;
                     break;
 
                 case MessageType.PingPong:
@@ -104,6 +168,17 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
                     }
                     SendPingPong(Ip, data);
                     PrivateMessage = true;
+                    break;
+
+                case MessageType.ActionMadeBy:
+                    switch (netActionMade.Deserialize(data))
+                    {
+                        case ServerActionMade.StartGame:
+                            GameManager.Instance.StartGame();
+                            break;
+                        case ServerActionMade.EndGame:
+                            break;
+                    }
                     break;
 
                 default:
@@ -119,6 +194,10 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         if (NetworkManager.Instance.isServer && !PrivateMessage)
         {
             NetworkManager.Instance.Broadcast(data);
+        }
+        else if (NetworkManager.Instance.isServer && PrivateMessage)
+        {
+            NetworkManager.Instance.SendToClient(data, Ip);
         }
     }
 
@@ -186,7 +265,7 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         netMessageToClient.data = NetworkManager.Instance.players;
 
         byte[] data = netMessageToClient.Serialize();
-
+        Lobby.Instance.UpdateLobby();
         NetworkManager.Instance.Broadcast(data);
     }
 
@@ -201,5 +280,12 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         }
 
         return false;
+    }
+
+    private byte[] ThrowErrorMessage(ErrorMessageType errorMessageSend)
+    {
+        errorMessage.data = errorMessageSend;
+        Debug.Log("SendErrorMessage = " + errorMessageSend.ToString());
+        return errorMessage.Serialize();
     }
 }

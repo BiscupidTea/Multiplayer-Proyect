@@ -16,22 +16,14 @@ public class NetworkScreen : MonoBehaviourSingleton<NetworkScreen>
 
     void OnConnectBtnClick()
     {
-        gameObject.SetActive(false);
-        LoadingScreen.Instance.gameObject.SetActive(true);
+        CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.loadingScreen);
         LoadingScreen.Instance.SwitchToLoadingScreen(addressInputField, portInputField, playerName);
     }
 
     void OnStartServerBtnClick()
     {
-        gameObject.SetActive(false);
         int port = System.Convert.ToInt32(portInputField.text);
         NetworkManager.Instance.StartServer(port);
-        LoadingScreen.Instance.SwitchToChatScreen();
-    }
-
-    public void SwitchToNetworkScreen()
-    {
-        ChatScreen.Instance.gameObject.SetActive(false);
-        this.gameObject.SetActive(true);
+        CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.lobby);
     }
 }

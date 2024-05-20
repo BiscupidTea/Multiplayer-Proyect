@@ -17,7 +17,7 @@ public class UdpConnection
     private Queue<DataReceived> dataReceivedQueue = new Queue<DataReceived>();
 
     object handler = new object();
-    
+
     public UdpConnection(int port, IReceiveData receiver = null)
     {
         connection = new UdpClient(port);
@@ -57,20 +57,23 @@ public class UdpConnection
 
     void OnReceive(IAsyncResult ar)
     {
+        DataReceived dataReceived = new DataReceived();
         try
         {
-            DataReceived dataReceived = new DataReceived();
-            dataReceived.data = connection.EndReceive(ar, ref dataReceived.ipEndPoint);
-
             lock (handler)
             {
-                dataReceivedQueue.Enqueue(dataReceived);
+                dataReceived.data = connection.EndReceive(ar, ref dataReceived.ipEndPoint);
             }
         }
-        catch(SocketException e)
+        catch (SocketException e)
         {
             // This happens when a client disconnects, as we fail to send to that port.
             UnityEngine.Debug.LogError("[UdpConnection] " + e.Message);
+        }
+
+        lock (handler)
+        {
+            dataReceivedQueue?.Enqueue(dataReceived);
         }
 
         connection.BeginReceive(OnReceive, null);
