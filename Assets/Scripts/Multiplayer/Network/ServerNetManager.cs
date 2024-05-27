@@ -11,8 +11,6 @@ public class ServerNetManager : NetworkManager
 
     public GameManager gameManager;
 
-    [SerializeField] private StringChannelSO MessageChannelSo;
-
     private int maxPlayers = 4;
     private float lobbyTime;
     private float preGameTime;
@@ -124,10 +122,6 @@ public class ServerNetManager : NetworkManager
                 StartHandShake(data, ip);
                 break;
 
-            case MessageType.String:
-                WriteConsoleMessage(data);
-                break;
-
             case MessageType.PingPong:
                 CheckPingPong(data, ip);
                 break;
@@ -231,14 +225,6 @@ public class ServerNetManager : NetworkManager
                 }
             }
         }
-    }
-
-    private void WriteConsoleMessage(byte[] data)
-    {
-        NetString message = new NetString();
-        string newMessage = message.Deserialize(data);
-
-        MessageChannelSo.RaiseEvent(newMessage);
     }
 
     private Client GetClient(IPEndPoint ip)

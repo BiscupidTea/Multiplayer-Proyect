@@ -24,8 +24,8 @@ public enum MessageType
     ContinueHandShake,
     MessageError,
     String,
-    Position,
-    Rotation,
+    Vector3,
+    Quaternion,
     PingPong,
     Time,
     ServerAction,
@@ -366,7 +366,7 @@ public class NetVector3 : OrderableMessage<(Vector3, int)>
 
     public override MessageType GetMessageType()
     {
-        return type;
+        return MessageType.Vector3;
     }
 
     public override byte[] Serialize()
