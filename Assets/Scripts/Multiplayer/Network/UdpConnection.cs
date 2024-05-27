@@ -60,15 +60,12 @@ public class UdpConnection
         DataReceived dataReceived = new DataReceived();
         try
         {
-            lock (handler)
-            {
-                dataReceived.data = connection.EndReceive(ar, ref dataReceived.ipEndPoint);
-            }
+            dataReceived.data = connection.EndReceive(ar, ref dataReceived.ipEndPoint);
         }
         catch (SocketException e)
         {
             // This happens when a client disconnects, as we fail to send to that port.
-            UnityEngine.Debug.LogError("[UdpConnection] " + e.Message);
+            UnityEngine.Debug.LogWarning("[UdpConnection] " + e.Message);
         }
 
         lock (handler)

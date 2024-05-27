@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.nachoarrastua.channelso": {
+      "version": "https://github.com/Rojoin/RojoinChannelSystem.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "b3cbaab01283a463379ead03d0e35effdfab863e"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,

@@ -6,7 +6,7 @@ using UnityEngine;
 public class MessageManager : MonoBehaviourSingleton<MessageManager>
 {
     private CheckSumReeder checkSumReeder = new CheckSumReeder();
-    private NetCode netCode = new NetCode();
+    private NetString netCode = new NetString();
     private PingPong pingPong = new PingPong();
     private NetTimer netTimer = new NetTimer();
     private NetVector3 netVector3 = new NetVector3();
@@ -14,8 +14,8 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
     private ErrorMessage errorMessage = new ErrorMessage();
     private NetServerActionMade neServertActionMade = new NetServerActionMade();
     private NetPlayerActionMade netPlayerActionMade = new NetPlayerActionMade();
-    private NetMessageToServer netMessageToServer = new NetMessageToServer();
-    private NetMessageToClient netMessageToClient = new NetMessageToClient();
+    private NetHandShake netMessageToServer = new NetHandShake();
+    private NetContinueHandShake netMessageToClient = new NetContinueHandShake();
     bool PrivateMessage = false;
 
     public void OnRecieveMessage(byte[] data, IPEndPoint Ip)
@@ -31,14 +31,14 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
 
                     if (!NetworkManager.Instance.gameStarted)
                     {
-                        Players newPlayer = new Players(netMessageToServer.Deserialize(data).Item2, netMessageToServer.Deserialize(data).Item1);
+                        Player newPlayer = new Player(netMessageToServer.Deserialize(data).Item2, netMessageToServer.Deserialize(data).Item1);
 
                         newPlayer.id = NetworkManager.Instance.clientId;
                         newPlayer.clientId = netMessageToServer.Deserialize(data).Item2;
 
                         if (CheckAlreadyUseName(newPlayer.clientId))
                         {
-                            data = ThrowErrorMessage(ErrorMessageType.UsernameAlredyUse);
+                            data = ThrowErrorMessage(ErrorMessageType.invalidUserName);
 
                             PrivateMessage = true;
                         }
@@ -105,7 +105,7 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
 
                     switch (errorMessage.Deserialize(data))
                     {
-                        case ErrorMessageType.UsernameAlredyUse:
+                        case ErrorMessageType.invalidUserName:
                             LoadingScreen.Instance.ShowErrorMessage("Username Already use");
                             break;
 
@@ -122,7 +122,7 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
                     }
                     break;
 
-                case MessageType.Console:
+                case MessageType.String:
                     string playerName = "";
                     for (int i = 0; i < NetworkManager.Instance.players.Count; i++)
                     {
@@ -314,4 +314,5 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         Debug.Log("SendErrorMessage = " + errorMessageSend.ToString());
         return errorMessage.Serialize();
     }
+
 }

@@ -1,49 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.UI;
 
 [Serializable]
-public class Client
-{
-    public float timeStamp;
-    public int id;
-    public bool connected;
-    public IPEndPoint ipEndPoint;
-    public DateTime LastMessageRecived;
-
-    public Client(IPEndPoint ipEndPoint, int id, float timeStamp)
-    {
-        this.timeStamp = timeStamp;
-        this.id = id;
-        this.connected = true;
-        this.ipEndPoint = ipEndPoint;
-        this.LastMessageRecived = DateTime.UtcNow;
-    }
-
-    public void resetTimer()
-    {
-        this.LastMessageRecived = DateTime.UtcNow;
-    }
-}
-
-[Serializable]
-public class Players
+public class Player
 {
     public string clientId;
     public int id;
 
-    public Players(string clientName, int id)
+    public Player(string clientName, int id)
     {
         this.clientId = clientName;
         this.id = id;
     }
 }
 
-public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveData
+public abstract class NetworkManager : MonoBehaviour, IReceiveData
 {
     public IPAddress ipAddress
     {
@@ -55,168 +28,65 @@ public class NetworkManager : MonoBehaviourSingleton<NetworkManager>, IReceiveDa
         get; private set;
     }
 
-    public bool isServer
-    {
-        get; private set;
-    }
-
-    public int TimeOut = 30;
+    public int TimeOut = 5;
 
     public Action<byte[], IPEndPoint> OnReceiveEvent;
 
-    private UdpConnection connection;
+    public UdpConnection connection;
 
-    private Dictionary<int, Client> clients = new Dictionary<int, Client>();
-    public List<Players> players = new List<Players>();
-    public Players playerData;
-    private readonly Dictionary<IPEndPoint, int> ipToId = new Dictionary<IPEndPoint, int>();
-    public Text pingText;
+    public List<Player> players = new List<Player>();
 
-    public int clientId = 0; // This id should be generated during first handshake
-
-    public DateTime lastMessageRecieved = DateTime.UtcNow;
-    public DateTime lastMessageSended = DateTime.UtcNow;
-    private int timeOut = 5;
-    public bool initialized = false;
-    public bool gameStarted = false;
-
-    public void StartServer(int port)
+    protected virtual void Disconnect()
     {
-        isServer = true;
-        this.port = port;
-        connection = new UdpConnection(port, this);
+
     }
 
-    public void StartClient(IPAddress ip, int port, string name)
+    protected virtual void OnStart()
     {
-        isServer = false;
-
-        this.port = port;
-        this.ipAddress = ip;
-
-        connection = new UdpConnection(ip, port, this);
-
-        playerData = new Players(name, -1);
-
-        MessageManager.Instance.OnSendHandshake(playerData.clientId, playerData.id);
-    }
-
-    public void AddClient(IPEndPoint ip)
-    {
-        if (!ipToId.ContainsKey(ip))
-        {
-            Debug.Log("Adding client: " + ip.Address);
-
-            int id = clientId;
-            ipToId[ip] = clientId;
-
-            clients.Add(clientId, new Client(ip, id, Time.realtimeSinceStartup));
-        }
-    }
-
-    public void Disconect()
-    {
-        clients.Clear();
-        
-        initialized = false;
-    }
-
-    public void addPlayer(Players newPlayer)
-    {
-        players.Add(newPlayer);
-    }
-
-    public void RemoveClient(IPEndPoint ip, string reason)
-    {
-        if (ipToId.ContainsKey(ip))
-        {
-            Debug.Log("Removing client: " + players.ToArray()[ipToId[ip]].clientId + " - reason: " + reason);
-            clients.ToArray()[ipToId[ip]].Value.connected = false;
-
-            for (int i = 0; i < players.Count; i++)
-            {
-                if (players.ToArray()[i].id == ipToId[ip])
-                {
-                    players.Remove(players.ToArray()[i]);
-                }
-            }
-
-            MessageManager.Instance.SendNewListOfPlayers();
-        }
+        players.Clear();
     }
 
     public void OnReceiveData(byte[] data, IPEndPoint ip)
     {
-        MessageManager.Instance.OnRecieveMessage(data, ip);
+        OnReceiveDataEvent(data, ip);
 
         if (OnReceiveEvent != null)
             OnReceiveEvent.Invoke(data, ip);
     }
 
-    public void SendToServer(byte[] data)
+    public abstract void OnReceiveDataEvent(byte[] data, IPEndPoint ip);
+
+    public void AddPlayer(Player newPlayer)
     {
-        connection.Send(data);
+        players.Add(newPlayer);
     }
 
-    public void SendToClient(byte[] data, IPEndPoint ip)
+    public Player GetPlayer(int id)
     {
-        connection.Send(data, ip);
-    }
-
-    public void Broadcast(byte[] data)
-    {
-        using (var iterator = clients.GetEnumerator())
+        foreach (Player player in players) 
         {
-            while (iterator.MoveNext())
+            if (player.id == id)
             {
-                connection.Send(data, iterator.Current.Value.ipEndPoint);
+                return player;
             }
         }
+
+        return new Player("Player not Found", -10);
     }
+
+    public abstract void CheckTimeOut();
+    public abstract void OnUpdate();
+    public abstract void CheckPingPong(byte[] data, IPEndPoint ip);
+
 
     void Update()
     {
+        CheckTimeOut();
+        OnUpdate();
+
         // Flush the data in main thread
         if (connection != null)
             connection.FlushReceiveData();
-
-        if (!isServer && initialized)
-        {
-            if ((DateTime.UtcNow - lastMessageRecieved).Seconds > timeOut)
-            {
-                Debug.Log((DateTime.UtcNow - lastMessageRecieved).Seconds);
-                Disconect();
-                Debug.Log("disconected from server = ");
-
-                CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.networkScreen);
-
-            }
-        }
-
-        if (isServer)
-        {
-            for (int i = 0; i < clients.Count; i++)
-            {
-                if (clients[i].connected == true)
-                {
-                    if ((DateTime.UtcNow - clients[i].LastMessageRecived).Seconds > timeOut)
-                    {
-                        RemoveClient(clients[i].ipEndPoint, "Time Out");
-                    }
-                }
-            }
-        }
-    }
-
-    public void ResetClientTimer(int PlayerId)
-    {
-        for (int i = 0; i < clients.Count; i++)
-        {
-            if (clients[i].id == PlayerId)
-            {
-                clients[i].resetTimer();
-            }
-        }
     }
 
 }

@@ -9,12 +9,21 @@ using System.Linq;
 // 12 = Message
 // FinalMessage = CheckSum
 
+[Flags]
+public enum MessageFlags
+{
+    none = 0,
+    checksum = 1,
+    ordenable = 2,
+    important = 4,
+}
+
 public enum MessageType
 {
-    MessageToServer = 0,
-    MessageToClient,
+    StartHandShake = 0,
+    ContinueHandShake,
     MessageError,
-    Console,
+    String,
     Position,
     Rotation,
     PingPong,
@@ -33,7 +42,7 @@ public enum Operation
 
 public enum ErrorMessageType
 {
-    UsernameAlredyUse,
+    invalidUserName,
     ServerFull,
     GameStarted,
 }
@@ -173,6 +182,7 @@ public abstract class BaseMessage<PayLoadType>
     }
 
     public PayLoadType data;
+
     public Action<PayLoadType> OnDeserialize;
     public abstract MessageType GetMessageType();
     public abstract byte[] Serialize();
@@ -201,9 +211,14 @@ public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
     protected static Dictionary<PayloadType, ulong> lastExecutedMsgID = new Dictionary<PayloadType, ulong>();
 }
 
-public class NetMessageToClient : OrderableMessage<List<Players>>
+public class NetContinueHandShake : OrderableMessage<List<Player>>
 {
-    public override List<Players> Deserialize(byte[] message)
+    public NetContinueHandShake(List<Player> listPlayers) 
+    {
+        data = listPlayers;
+    }
+
+    public override List<Player> Deserialize(byte[] message)
     {
         int currentPosition = messagePosition;
 
@@ -212,7 +227,7 @@ public class NetMessageToClient : OrderableMessage<List<Players>>
 
         currentPosition += 4;
 
-        List<Players> newPlayerList = new List<Players>();
+        List<Player> newPlayerList = new List<Player>();
 
 
         for (int i = 0; i < totalPlayers; i++)
@@ -236,20 +251,20 @@ public class NetMessageToClient : OrderableMessage<List<Players>>
             }
 
             Debug.Log(clientId + " : " + Id);
-            newPlayerList.Add(new Players(clientId, Id));
+            newPlayerList.Add(new Player(clientId, Id));
         }
 
         return newPlayerList;
     }
 
-    public override List<Players> GetData()
+    public override List<Player> GetData()
     {
         return data;
     }
 
     public override MessageType GetMessageType()
     {
-        return MessageType.MessageToClient;
+        return MessageType.ContinueHandShake;
     }
 
     public override byte[] Serialize()
@@ -282,35 +297,30 @@ public class NetMessageToClient : OrderableMessage<List<Players>>
     }
 }
 
-public class NetMessageToServer : OrderableMessage<(int, string)>
+public class NetHandShake : OrderableMessage<string>
 {
-    //ID
-    //ClientID
-
-    public override (int, string) Deserialize(byte[] message)
+    public override string Deserialize(byte[] message)
     {
-        (int, string) outData;
+        string outData;
 
-        outData.Item1 = BitConverter.ToInt32(message, messagePosition); //ID
-
-        outData.Item2 = "";//ClientID
+        outData = "";
         int messageLenght = BitConverter.ToInt32(message, messagePosition + 4);
 
         for (int i = 0; i < messageLenght; i++)
         {
-            outData.Item2 += (char)message[messagePosition + 8 + i];
+            outData += (char)message[messagePosition + 8 + i];
         }
         return outData;
     }
 
-    public override (int, string) GetData()
+    public override string GetData()
     {
         return data;
     }
 
     public override MessageType GetMessageType()
     {
-        return MessageType.MessageToServer;
+        return MessageType.StartHandShake;
     }
 
     public override byte[] Serialize()
@@ -322,13 +332,11 @@ public class NetMessageToServer : OrderableMessage<(int, string)>
         //set id
         SetId(outData);
 
-        outData.AddRange(BitConverter.GetBytes(data.Item1)); //ID
+        outData.AddRange(BitConverter.GetBytes(data.Length)); //ClientID
 
-        outData.AddRange(BitConverter.GetBytes(data.Item2.Length)); //ClientID
-
-        for (int i = 0; i < data.Item2.Length; i++)
+        for (int i = 0; i < data.Length; i++)
         {
-            outData.Add((byte)data.Item2[i]);
+            outData.Add((byte)data[i]);
         }
 
         InsertCheckSum(outData);
@@ -358,7 +366,7 @@ public class NetVector3 : OrderableMessage<(Vector3, int)>
 
     public override MessageType GetMessageType()
     {
-        return MessageType.Position;
+        return type;
     }
 
     public override byte[] Serialize()
@@ -402,7 +410,7 @@ public class NetQuaternion : OrderableMessage<(Quaternion, int)>
 
     public override MessageType GetMessageType()
     {
-        return MessageType.Rotation;
+        return type;
     }
 
     public override byte[] Serialize()
@@ -425,35 +433,32 @@ public class NetQuaternion : OrderableMessage<(Quaternion, int)>
     }
 }
 
-public class NetCode : OrderableMessage<(int, string)>
+public class NetString : OrderableMessage<string>
 {
-    public override (int, string) Deserialize(byte[] message)
+    public override string Deserialize(byte[] message)
     {
-        (int, string) outData;
-
-        //PlayerID
-        outData.Item1 = BitConverter.ToInt32(message, messagePosition);
+        string outData;
 
         //message
-        outData.Item2 = "";
-        int messageLenght = BitConverter.ToInt32(message, messagePosition + 4);
+        outData = "";
+        int messageLenght = BitConverter.ToInt32(message, messagePosition);
 
         for (int i = 0; i < messageLenght; i++)
         {
-            outData.Item2 += (char)message[messagePosition + 8 + i];
+            outData += (char)message[messagePosition + 4 + i];
         }
 
         return outData;
     }
 
-    public override (int, string) GetData()
+    public override string GetData()
     {
         return data;
     }
 
     public override MessageType GetMessageType()
     {
-        return MessageType.Console;
+        return MessageType.String;
     }
 
     public override byte[] Serialize()
@@ -465,12 +470,11 @@ public class NetCode : OrderableMessage<(int, string)>
         //set id
         SetId(outData);
 
-        outData.AddRange(BitConverter.GetBytes(data.Item1));
-        outData.AddRange(BitConverter.GetBytes(data.Item2.Length));
+        outData.AddRange(BitConverter.GetBytes(data.Length));
 
-        for (int i = 0; i < data.Item2.Length; i++)
+        for (int i = 0; i < data.Length; i++)
         {
-            outData.Add((byte)data.Item2[i]);
+            outData.Add((byte)data[i]);
         }
 
         InsertCheckSum(outData);
@@ -480,6 +484,7 @@ public class NetCode : OrderableMessage<(int, string)>
 
 public class PingPong : OrderableMessage<int>
 {
+
     public override int Deserialize(byte[] message)
     {
         int outData;
@@ -530,7 +535,7 @@ public class NetTimer : OrderableMessage<float>
 
     public override MessageType GetMessageType()
     {
-        return MessageType.Time;
+        return type;
     }
 
     public override byte[] Serialize()
@@ -568,7 +573,7 @@ public class NetServerActionMade : OrderableMessage<(ServerActionMade, int)>
 
     public override MessageType GetMessageType()
     {
-        return MessageType.ServerAction;
+        return type;
     }
 
     public override byte[] Serialize()
@@ -609,7 +614,7 @@ public class NetPlayerActionMade : OrderableMessage<(PlayerActionMade, int, Vect
 
     public override MessageType GetMessageType()
     {
-        return MessageType.PlayerAction;
+        return type;
     }
 
     public override byte[] Serialize()
@@ -634,6 +639,11 @@ public class NetPlayerActionMade : OrderableMessage<(PlayerActionMade, int, Vect
 
 public class ErrorMessage : OrderableMessage<ErrorMessageType>
 {
+    public ErrorMessage(ErrorMessageType errorMessageType)
+    {
+        data = errorMessageType;
+    }
+
     public override ErrorMessageType Deserialize(byte[] message)
     {
         int outData;
@@ -650,7 +660,7 @@ public class ErrorMessage : OrderableMessage<ErrorMessageType>
 
     public override MessageType GetMessageType()
     {
-        return MessageType.MessageError;
+        return type;
     }
 
     public override byte[] Serialize()
