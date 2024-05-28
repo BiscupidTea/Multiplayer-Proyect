@@ -22,14 +22,13 @@ public enum MessageType
 {
     StartHandShake = 0,
     ContinueHandShake,
+    Disconnect,
     MessageError,
     String,
     Vector3,
     Quaternion,
     PingPong,
     Time,
-    ServerAction,
-    PlayerAction,
 }
 
 public enum Operation
@@ -182,6 +181,7 @@ public abstract class BaseMessage<PayLoadType>
     }
 
     public PayLoadType data;
+    public MessageType type;
 
     public Action<PayLoadType> OnDeserialize;
     public abstract MessageType GetMessageType();
@@ -216,6 +216,7 @@ public class NetContinueHandShake : OrderableMessage<List<Player>>
     public NetContinueHandShake(List<Player> listPlayers) 
     {
         data = listPlayers;
+        type = MessageType.ContinueHandShake;
     }
 
     public override List<Player> Deserialize(byte[] message)
@@ -264,7 +265,7 @@ public class NetContinueHandShake : OrderableMessage<List<Player>>
 
     public override MessageType GetMessageType()
     {
-        return MessageType.ContinueHandShake;
+        return type;
     }
 
     public override byte[] Serialize()
@@ -299,6 +300,11 @@ public class NetContinueHandShake : OrderableMessage<List<Player>>
 
 public class NetHandShake : OrderableMessage<string>
 {
+    public NetHandShake(MessageType messageType)
+    {
+        type = messageType;
+    }
+
     public override string Deserialize(byte[] message)
     {
         string outData;
@@ -320,7 +326,7 @@ public class NetHandShake : OrderableMessage<string>
 
     public override MessageType GetMessageType()
     {
-        return MessageType.StartHandShake;
+        return type;
     }
 
     public override byte[] Serialize()

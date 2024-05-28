@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using UnityEngine;
 
 public class ServerNetManager : NetworkManager
 {
@@ -9,18 +8,19 @@ public class ServerNetManager : NetworkManager
     private readonly Dictionary<IPEndPoint, int> ipToId = new Dictionary<IPEndPoint, int>();
     public int clientId = 0; // This id should be generated during first handshake
 
-    public GameManager gameManager;
-
     private int maxPlayers = 4;
     private float lobbyTime;
     private float preGameTime;
     private float gameTime;
+
+    private bool gameStarted = false;
 
     protected override void OnStart()
     {
         clients.Clear();
         ipToId.Clear();
         connection = new UdpConnection(port, this);
+        gameStarted = true;
     }
 
     protected override void Disconnect()
@@ -33,7 +33,7 @@ public class ServerNetManager : NetworkManager
     {
         if (!ipToId.ContainsKey(ip))
         {
-            if (true)//game started
+            if (gameStarted)
             {
                 if (clients.Count < maxPlayers)
                 {
@@ -43,16 +43,10 @@ public class ServerNetManager : NetworkManager
                         int id = clientId;
                         ipToId[ip] = clientId;
 
-                        clients.Add(clientId, new Client(ip, id, Time.realtimeSinceStartup));
+                        clients.Add(clientId, new Client(ip, id));
                         AddPlayer(new Player(userName, clientId));
                         clientId++;
-
-                        //call created player
-
-
-                        //check minimum player
-
-                        Debug.Log("ADD CLIENT::Client Ip = " + ip.Address + " - Client Id = " + userName);
+                        Console.WriteLine("ADD CLIENT::Client Ip = " + ip.Address + " - Client Id = " + userName);
                         return true;
                     }
                     else
@@ -80,7 +74,7 @@ public class ServerNetManager : NetworkManager
 
     public void DisconnectPlayer(Client client)
     {
-        Player playerDelete = new("",-100);
+        Player playerDelete = new("", -100);
         foreach (Player player in players)
         {
             if (client.id == player.id)
@@ -90,7 +84,7 @@ public class ServerNetManager : NetworkManager
             }
         }
 
-        Debug.Log("Removing client: " + client.clientId);
+        Console.WriteLine("Removing client: " + client.clientId);
 
         client.IsConected = false;
         players.Remove(playerDelete);
@@ -116,7 +110,7 @@ public class ServerNetManager : NetworkManager
     {
         MessageType messageType = (MessageType)BitConverter.ToInt32(data, 0);
 
-        switch (messageType) 
+        switch (messageType)
         {
             case MessageType.StartHandShake:
                 StartHandShake(data, ip);
@@ -126,8 +120,13 @@ public class ServerNetManager : NetworkManager
                 CheckPingPong(data, ip);
                 break;
 
-                default:
-                Debug.LogError("Received Unknown Message: " + messageType);
+            case MessageType.Disconnect:
+                NetHandShake endHandShake = new NetHandShake(MessageType.Disconnect);
+                DisconnectPlayer(GetClient(endHandShake.Deserialize(data)));
+                break;
+
+            default:
+                Console.WriteLine("Received Unknown Message: " + messageType);
                 break;
         }
     }
@@ -137,20 +136,17 @@ public class ServerNetManager : NetworkManager
         connection.Send(data, ip);
     }
 
-    public void SendToClient(byte[] data, string userName, IPEndPoint ip)
+    public void SendToClient(byte[] data, string userName)
     {
-        IPEndPoint clientIp = ip;
-
         foreach (var client in clients)
         {
             if (client.Value.clientId == userName)
             {
-                clientIp = client.Value.ipEndPoint;
+                connection.Send(data, client.Value.ipEndPoint);
                 break;
             }
         }
 
-        connection.Send(data, clientIp);
     }
 
     public void Broadcast(byte[] data)
@@ -169,7 +165,7 @@ public class ServerNetManager : NetworkManager
 
     private void StartHandShake(byte[] data, IPEndPoint ip)
     {
-        NetHandShake netHandShake = new NetHandShake();
+        NetHandShake netHandShake = new NetHandShake(MessageType.StartHandShake);
         string newPlayerName = netHandShake.Deserialize(data);
 
         if (TryAddClient(ip, newPlayerName))
@@ -199,7 +195,7 @@ public class ServerNetManager : NetworkManager
 
     public void ResetClientTimer(int PlayerId)
     {
-        foreach (var client in clients) 
+        foreach (var client in clients)
         {
             if (client.Value.id == PlayerId)
             {
@@ -210,7 +206,7 @@ public class ServerNetManager : NetworkManager
 
     public override void OnUpdate()
     {
-        
+
     }
 
     public override void CheckTimeOut()
@@ -239,11 +235,23 @@ public class ServerNetManager : NetworkManager
 
         return null;
     }
-    private Client GetClient(int playerId)
+    private Client GetClient(int Id)
     {
         foreach (var client in clients)
         {
-            if (client.Value.id == playerId)
+            if (client.Value.id == Id)
+            {
+                return client.Value;
+            }
+        }
+
+        return null;
+    }
+    private Client GetClient(string ClientId)
+    {
+        foreach (var client in clients)
+        {
+            if (client.Value.clientId == ClientId)
             {
                 return client.Value;
             }

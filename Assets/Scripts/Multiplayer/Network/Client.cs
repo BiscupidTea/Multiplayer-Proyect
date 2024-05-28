@@ -4,16 +4,14 @@ using System.Net;
 [Serializable]
 public class Client
 {
-    public float timeStamp;
     public int id;
     public string clientId;
     public bool IsConected;
     public IPEndPoint ipEndPoint;
     public DateTime LastMessageRecived;
 
-    public Client(IPEndPoint ipEndPoint, int id, float timeStamp)
+    public Client(IPEndPoint ipEndPoint, int id)
     {
-        this.timeStamp = timeStamp;
         this.id = id;
         this.ipEndPoint = ipEndPoint;
         IsConected = true;

@@ -27,54 +27,6 @@ public class MessageManager : MonoBehaviourSingleton<MessageManager>
         {
             switch (typeMessage)
             {
-                case MessageType.MessageToServer:
-
-                    if (!NetworkManager.Instance.gameStarted)
-                    {
-                        Player newPlayer = new Player(netMessageToServer.Deserialize(data).Item2, netMessageToServer.Deserialize(data).Item1);
-
-                        newPlayer.id = NetworkManager.Instance.clientId;
-                        newPlayer.clientId = netMessageToServer.Deserialize(data).Item2;
-
-                        if (CheckAlreadyUseName(newPlayer.clientId))
-                        {
-                            data = ThrowErrorMessage(ErrorMessageType.invalidUserName);
-
-                            PrivateMessage = true;
-                        }
-                        else
-                        {
-                            Debug.Log(NetworkManager.Instance.players.Count + " < " + 4);
-                            if (NetworkManager.Instance.players.Count <= 4)
-                            {
-                                NetworkManager.Instance.AddClient(Ip);
-                                NetworkManager.Instance.addPlayer(newPlayer);
-
-                                netMessageToClient.data = NetworkManager.Instance.players;
-
-                                data = netMessageToClient.Serialize();
-
-                                NetworkManager.Instance.clientId++;
-                                Lobby.Instance.UpdateLobby();
-                                Debug.Log("add new client = Client Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].clientId + " - Id: " + netMessageToClient.data[netMessageToClient.data.Count - 1].id);
-                                PrivateMessage = false;
-                            }
-                            else
-                            {
-                                data = ThrowErrorMessage(ErrorMessageType.ServerFull);
-
-                                PrivateMessage = true;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        data = ThrowErrorMessage(ErrorMessageType.GameStarted);
-                        PrivateMessage = true;
-                    }
-
-                    break;
-
                 case MessageType.MessageToClient:
                     Debug.Log("message to client");
 
