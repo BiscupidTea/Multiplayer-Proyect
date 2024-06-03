@@ -108,7 +108,32 @@ public class ServerNetManager : NetworkManager
 
     public override void OnReceiveDataEvent(byte[] data, IPEndPoint ip)
     {
+        CheckSumReeder checkSumReeder = new CheckSumReeder();
+        int currentFlags = BitConverter.ToInt32(data, 4);
+
         MessageType messageType = (MessageType)BitConverter.ToInt32(data, 0);
+        MessageFlags flags = (MessageFlags)currentFlags;
+
+        bool haveCheckSum = flags.HasFlag(MessageFlags.checksum);
+        bool isOrdenable = flags.HasFlag(MessageFlags.ordenable);
+        bool isImportant = flags.HasFlag(MessageFlags.important);
+        bool readMessage = false;
+
+        if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
+        {
+            if (isOrdenable)
+            {
+
+                if (isImportant)
+                {
+
+                }
+            }
+        }
+        else
+        {
+            return;
+        }
 
         switch (messageType)
         {

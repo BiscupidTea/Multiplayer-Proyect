@@ -4,8 +4,8 @@ using System;
 using System.Linq;
 
 // 0 = Message Type
-// 4 = Id Ordenable Message
-// 8 = bool Ordenable Message
+// 4 = flag
+// 8 = Ordenable Message
 // 12 = Message
 // FinalMessage = CheckSum
 
@@ -130,8 +130,9 @@ public class CheckSumReeder
 
 public abstract class BaseMessage<PayLoadType>
 {
-    public static int ordenablePosition = 4;
-    public static int messagePosition = 8;
+    public static int flagTypeMessage = 4;
+    public static int ordenablePosition = 8;
+    public static int messagePosition = 12;
 
     public virtual void InsertCheckSum(List<byte> message)
     {
@@ -182,12 +183,14 @@ public abstract class BaseMessage<PayLoadType>
 
     public PayLoadType data;
     public MessageType type;
+    public MessageFlags flags;
 
     public Action<PayLoadType> OnDeserialize;
-    public abstract MessageType GetMessageType();
     public abstract byte[] Serialize();
     public abstract PayLoadType Deserialize(byte[] message);
     public abstract PayLoadType GetData();
+    public abstract MessageFlags GetMessageFlag();
+    public abstract MessageType GetMessageType();
 }
 
 public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
@@ -213,10 +216,11 @@ public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
 
 public class NetContinueHandShake : OrderableMessage<List<Player>>
 {
-    public NetContinueHandShake(List<Player> listPlayers) 
+    public NetContinueHandShake(List<Player> listPlayers)
     {
         data = listPlayers;
         type = MessageType.ContinueHandShake;
+        flags = MessageFlags.important;
     }
 
     public override List<Player> Deserialize(byte[] message)
@@ -263,6 +267,11 @@ public class NetContinueHandShake : OrderableMessage<List<Player>>
         return data;
     }
 
+    public override MessageFlags GetMessageFlag()
+    {
+        return flags;
+    }
+
     public override MessageType GetMessageType()
     {
         return type;
@@ -273,6 +282,9 @@ public class NetContinueHandShake : OrderableMessage<List<Player>>
         List<byte> outData = new List<byte>();
         //message type
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        //set flag
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
 
         //set id
         SetId(outData);
@@ -303,6 +315,7 @@ public class NetHandShake : OrderableMessage<string>
     public NetHandShake(MessageType messageType)
     {
         type = messageType;
+        flags = MessageFlags.important;
     }
 
     public override string Deserialize(byte[] message)
@@ -324,6 +337,11 @@ public class NetHandShake : OrderableMessage<string>
         return data;
     }
 
+    public override MessageFlags GetMessageFlag()
+    {
+        return flags;
+    }
+
     public override MessageType GetMessageType()
     {
         return type;
@@ -334,6 +352,9 @@ public class NetHandShake : OrderableMessage<string>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        //set flag
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
 
         //set id
         SetId(outData);
@@ -353,6 +374,11 @@ public class NetHandShake : OrderableMessage<string>
 
 public class NetVector3 : OrderableMessage<(Vector3, int)>
 {
+    public NetVector3()
+    {
+        type = MessageType.Vector3;
+        flags = MessageFlags.important;
+    }
     public override (Vector3, int) Deserialize(byte[] message)
     {
         (Vector3, int) outData;
@@ -370,9 +396,14 @@ public class NetVector3 : OrderableMessage<(Vector3, int)>
         return data;
     }
 
+    public override MessageFlags GetMessageFlag()
+    {
+        return flags;
+    }
+
     public override MessageType GetMessageType()
     {
-        return MessageType.Vector3;
+        return type;
     }
 
     public override byte[] Serialize()
@@ -380,6 +411,9 @@ public class NetVector3 : OrderableMessage<(Vector3, int)>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        //set flag
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
 
         SetId(outData);
 
@@ -396,6 +430,11 @@ public class NetVector3 : OrderableMessage<(Vector3, int)>
 
 public class NetQuaternion : OrderableMessage<(Quaternion, int)>
 {
+    public NetQuaternion()
+    {
+        type = MessageType.Quaternion;
+        flags = MessageFlags.important;
+    }
     public override (Quaternion, int) Deserialize(byte[] message)
     {
         (Quaternion, int) outData;
@@ -414,6 +453,11 @@ public class NetQuaternion : OrderableMessage<(Quaternion, int)>
         return data;
     }
 
+    public override MessageFlags GetMessageFlag()
+    {
+        return flags;
+    }
+
     public override MessageType GetMessageType()
     {
         return type;
@@ -424,6 +468,9 @@ public class NetQuaternion : OrderableMessage<(Quaternion, int)>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        //set flag
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
 
         SetId(outData);
 
@@ -441,6 +488,11 @@ public class NetQuaternion : OrderableMessage<(Quaternion, int)>
 
 public class NetString : OrderableMessage<string>
 {
+    public NetString()
+    {
+        type = MessageType.String;
+        flags = MessageFlags.important;
+    }
     public override string Deserialize(byte[] message)
     {
         string outData;
@@ -462,9 +514,14 @@ public class NetString : OrderableMessage<string>
         return data;
     }
 
+    public override MessageFlags GetMessageFlag()
+    {
+        return flags;
+    }
+
     public override MessageType GetMessageType()
     {
-        return MessageType.String;
+        return type;
     }
 
     public override byte[] Serialize()
@@ -472,6 +529,9 @@ public class NetString : OrderableMessage<string>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        //set flag
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
 
         //set id
         SetId(outData);
@@ -490,6 +550,11 @@ public class NetString : OrderableMessage<string>
 
 public class PingPong : OrderableMessage<int>
 {
+    public PingPong() 
+    {
+        type = MessageType.PingPong;
+        flags = MessageFlags.none;
+    }
 
     public override int Deserialize(byte[] message)
     {
@@ -505,9 +570,14 @@ public class PingPong : OrderableMessage<int>
         return data;
     }
 
+    public override MessageFlags GetMessageFlag()
+    {
+        return flags;
+    }
+
     public override MessageType GetMessageType()
     {
-        return MessageType.PingPong;
+        return type;
     }
 
     public override byte[] Serialize()
@@ -515,7 +585,12 @@ public class PingPong : OrderableMessage<int>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
-        SetId(outData);
+
+        //set flag
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
+
+        SetId(outData); 
+        
         outData.AddRange(BitConverter.GetBytes(data));
         InsertCheckSum((outData));
 
@@ -525,6 +600,12 @@ public class PingPong : OrderableMessage<int>
 
 public class NetTimer : OrderableMessage<float>
 {
+    NetTimer()
+    {
+        type = MessageType.Time;
+        flags = MessageFlags.ordenable;
+    }
+
     public override float Deserialize(byte[] message)
     {
         float outData;
@@ -539,6 +620,11 @@ public class NetTimer : OrderableMessage<float>
         return data;
     }
 
+    public override MessageFlags GetMessageFlag()
+    {
+        return flags;
+    }
+
     public override MessageType GetMessageType()
     {
         return type;
@@ -549,6 +635,9 @@ public class NetTimer : OrderableMessage<float>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        //set flag
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
 
         SetId(outData);
 
@@ -560,94 +649,95 @@ public class NetTimer : OrderableMessage<float>
     }
 }
 
-public class NetServerActionMade : OrderableMessage<(ServerActionMade, int)>
-{
-    public override (ServerActionMade, int) Deserialize(byte[] message)
-    {
-        (ServerActionMade, int) outData;
+//public class NetServerActionMade : OrderableMessage<(ServerActionMade, int)>
+//{
+//    public override (ServerActionMade, int) Deserialize(byte[] message)
+//    {
+//        (ServerActionMade, int) outData;
 
-        outData.Item1 = (ServerActionMade)BitConverter.ToInt32(message, messagePosition);
-        outData.Item2 = BitConverter.ToInt32(message, messagePosition + 4);
+//        outData.Item1 = (ServerActionMade)BitConverter.ToInt32(message, messagePosition);
+//        outData.Item2 = BitConverter.ToInt32(message, messagePosition + 4);
 
-        return outData;
-    }
+//        return outData;
+//    }
 
-    public override (ServerActionMade, int) GetData()
-    {
-        return data;
-    }
+//    public override (ServerActionMade, int) GetData()
+//    {
+//        return data;
+//    }
 
-    public override MessageType GetMessageType()
-    {
-        return type;
-    }
+//    public override MessageType GetMessageType()
+//    {
+//        return type;
+//    }
 
-    public override byte[] Serialize()
-    {
-        List<byte> outData = new List<byte>();
+//    public override byte[] Serialize()
+//    {
+//        List<byte> outData = new List<byte>();
 
-        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+//        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
-        SetId(outData); //set id
+//        SetId(outData); //set id
 
-        outData.AddRange(BitConverter.GetBytes((int)data.Item1));
-        outData.AddRange(BitConverter.GetBytes(data.Item2));
-        InsertCheckSum(outData);
+//        outData.AddRange(BitConverter.GetBytes((int)data.Item1));
+//        outData.AddRange(BitConverter.GetBytes(data.Item2));
+//        InsertCheckSum(outData);
 
-        return outData.ToArray();
-    }
-}
+//        return outData.ToArray();
+//    }
+//}
 
-public class NetPlayerActionMade : OrderableMessage<(PlayerActionMade, int, Vector3)>
-{
-    public override (PlayerActionMade, int, Vector3) Deserialize(byte[] message)
-    {
-        (PlayerActionMade, int, Vector3) outData;
+//public class NetPlayerActionMade : OrderableMessage<(PlayerActionMade, int, Vector3)>
+//{
+//    public override (PlayerActionMade, int, Vector3) Deserialize(byte[] message)
+//    {
+//        (PlayerActionMade, int, Vector3) outData;
 
-        outData.Item1 = (PlayerActionMade)BitConverter.ToInt32(message, messagePosition);
-        outData.Item2 = BitConverter.ToInt32(message, messagePosition + 4);
-        outData.Item3.x = BitConverter.ToSingle(message, messagePosition + 8);
-        outData.Item3.y = BitConverter.ToSingle(message, messagePosition + 12);
-        outData.Item3.z = BitConverter.ToSingle(message, messagePosition + 16);
+//        outData.Item1 = (PlayerActionMade)BitConverter.ToInt32(message, messagePosition);
+//        outData.Item2 = BitConverter.ToInt32(message, messagePosition + 4);
+//        outData.Item3.x = BitConverter.ToSingle(message, messagePosition + 8);
+//        outData.Item3.y = BitConverter.ToSingle(message, messagePosition + 12);
+//        outData.Item3.z = BitConverter.ToSingle(message, messagePosition + 16);
 
-        return outData;
-    }
+//        return outData;
+//    }
 
-    public override (PlayerActionMade, int, Vector3) GetData()
-    {
-        return data;
-    }
+//    public override (PlayerActionMade, int, Vector3) GetData()
+//    {
+//        return data;
+//    }
 
-    public override MessageType GetMessageType()
-    {
-        return type;
-    }
+//    public override MessageType GetMessageType()
+//    {
+//        return type;
+//    }
 
-    public override byte[] Serialize()
-    {
-        List<byte> outData = new List<byte>();
+//    public override byte[] Serialize()
+//    {
+//        List<byte> outData = new List<byte>();
 
-        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+//        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
 
-        SetId(outData); //set id
+//        SetId(outData); //set id
 
-        outData.AddRange(BitConverter.GetBytes((int)data.Item1));
-        outData.AddRange(BitConverter.GetBytes(data.Item2));
-        outData.AddRange(BitConverter.GetBytes(data.Item3.x));
-        outData.AddRange(BitConverter.GetBytes(data.Item3.y));
-        outData.AddRange(BitConverter.GetBytes(data.Item3.z));  
+//        outData.AddRange(BitConverter.GetBytes((int)data.Item1));
+//        outData.AddRange(BitConverter.GetBytes(data.Item2));
+//        outData.AddRange(BitConverter.GetBytes(data.Item3.x));
+//        outData.AddRange(BitConverter.GetBytes(data.Item3.y));
+//        outData.AddRange(BitConverter.GetBytes(data.Item3.z));
 
-        InsertCheckSum(outData);
+//        InsertCheckSum(outData);
 
-        return outData.ToArray();
-    }
-}
+//        return outData.ToArray();
+//    }
+//}
 
 public class ErrorMessage : OrderableMessage<ErrorMessageType>
 {
     public ErrorMessage(ErrorMessageType errorMessageType)
     {
         data = errorMessageType;
+        type = MessageType.MessageError;
     }
 
     public override ErrorMessageType Deserialize(byte[] message)
@@ -664,6 +754,11 @@ public class ErrorMessage : OrderableMessage<ErrorMessageType>
         return data;
     }
 
+    public override MessageFlags GetMessageFlag()
+    {
+        return flags;
+    }
+
     public override MessageType GetMessageType()
     {
         return type;
@@ -674,6 +769,9 @@ public class ErrorMessage : OrderableMessage<ErrorMessageType>
         List<byte> outData = new List<byte>();
 
         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        //set flag
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
 
         //set id
         SetId(outData);

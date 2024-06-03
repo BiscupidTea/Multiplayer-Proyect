@@ -1,20 +1,17 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.UIElements;
 
 public class GameManager : MonoBehaviourSingleton<GameManager>
 {
     [SerializeField] private PlayerSpawn[] playerSpawn;
     [SerializeField] private GameObject[] playerList;
-    private NetServerActionMade ActionMade = new NetServerActionMade();
     public bool playing = false;
     public PlayerSO playerSO;
 
     [SerializeField] private bool Start = false;
     [SerializeField] private float maxTime;
     private float timer;
-    private NetTimer netTimer = new NetTimer();
     [SerializeField] private Text Timer;
 
     int playersAlive = 0;

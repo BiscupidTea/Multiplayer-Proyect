@@ -1,60 +1,143 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Net;
+using System.Threading;
 using UnityEngine;
 
 public class ClientNetManager : NetworkManager
 {
     public Player playerData;
+    [SerializeField] private bool isConnected;
 
-    public void OnStart()
+    private DateTime currentTimePing;
+
+    protected override void OnStart()
     {
-        this.port = port;
-        this.ipAddress = ip;
+        base.OnStart();
 
-        connection = new UdpConnection(ip, port, this);
+        isConnected = false;
+        connection = new UdpConnection(ipAddress, port, myPlayer.clientId,this);
+    }
 
-        playerData = new Player(name, -1);
 
-        MessageManager.Instance.OnSendHandshake(playerData.clientId, playerData.id);
+    protected override void Disconnect()
+    {
+        base.Disconnect();
+
+        if (isConnected)
+        {
+            NetHandShake netHandShakeExit = new NetHandShake(MessageType.Disconnect);
+            netHandShakeExit.data = playerData.clientId;
+            SendToServer(netHandShakeExit.Serialize());
+
+            isConnected = false;
+            
+            connection.Close();
+ 
+            //switch to network screen
+        }
+
+
     }
 
     public override void OnReceiveDataEvent(byte[] data, IPEndPoint ip)
     {
-        Debug.Log("a");
-    }
+        CheckSumReeder checkSumReeder = new CheckSumReeder();
+        int currentFlags = BitConverter.ToInt32(data, 4);
 
-    void Update()
-    {
+        MessageType messageType = (MessageType)BitConverter.ToInt32(data, 0);
+        MessageFlags flags = (MessageFlags)currentFlags;
 
-        if (!isServer && initialized)
+        bool haveCheckSum = flags.HasFlag(MessageFlags.checksum);
+        bool isOrdenable = flags.HasFlag(MessageFlags.ordenable);
+        bool isImportant = flags.HasFlag(MessageFlags.important);
+        bool readMessage = false;
+
+        if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
         {
-            if ((DateTime.UtcNow - lastMessageRecieved).Seconds > timeOut)
+            if (isOrdenable)
             {
-                Debug.Log((DateTime.UtcNow - lastMessageRecieved).Seconds);
-                Disconect();
-                Debug.Log("disconected from server = ");
 
-                CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.networkScreen);
+                if (isImportant)
+                {
 
+                }
             }
+        }
+        else
+        {
+            return;
+        }
+
+        switch (messageType)
+        {
+            case MessageType.ContinueHandShake:
+                RefreshPlayerList(data);
+                break;
+
+            case MessageType.MessageError:
+                CheckErrorType(data);
+                break;
+
+            case MessageType.String:
+                MessageRecieved(data);
+                break;
+
+            case MessageType.Vector3:
+                MovePlayer(data);
+                break;
+
+            case MessageType.Quaternion:
+                RotatePlayer(data);
+                break;
+
+            case MessageType.PingPong:
+                CheckPingPong(data, ip);
+                break;
+
+            case MessageType.Time:
+                break;
         }
     }
 
-    public void Disconnect()
+    private void RotatePlayer(byte[] data)
     {
-        clients.Clear();
-        connection.Close();
-        initialized = false;
+        throw new NotImplementedException();
     }
 
-    public void OnReceiveData(byte[] data, IPEndPoint ip)
+    private void MovePlayer(byte[] data)
     {
-        MessageManager.Instance.OnRecieveMessage(data, ip);
+        throw new NotImplementedException();
+    }
 
-        if (OnReceiveEvent != null)
-            OnReceiveEvent.Invoke(data, ip);
+    private void MessageRecieved(byte[] data)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void CheckErrorType(byte[] data)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void RefreshPlayerList(byte[] data)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void CheckTimeOut()
+    {
+        if ((DateTime.UtcNow - currentTimePing).Seconds > TimeOut)
+        {
+            Disconnect();
+            Debug.Log("disconnected from server = Time out: " + (DateTime.UtcNow - currentTimePing).Seconds);
+
+            CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.networkScreen);
+        }
+    }
+
+    public override void CheckPingPong(byte[] data, IPEndPoint ip)
+    {
+        currentTimePing = DateTime.UtcNow;
     }
 
     public void SendToServer(byte[] data)
@@ -62,18 +145,9 @@ public class ClientNetManager : NetworkManager
         connection.Send(data);
     }
 
-    public override void CheckTimeOut()
-    {
-        throw new NotImplementedException();
-    }
-
     public override void OnUpdate()
     {
-        throw new NotImplementedException();
+
     }
 
-    public override void CheckPingPong(byte[] data, IPEndPoint ip)
-    {
-        throw new NotImplementedException();
-    }
 }

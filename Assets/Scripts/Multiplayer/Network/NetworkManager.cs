@@ -36,6 +36,18 @@ public abstract class NetworkManager : MonoBehaviour, IReceiveData
 
     public List<Player> players = new List<Player>();
 
+    public Player myPlayer;
+
+    private void OnEnable()
+    {
+        OnStart();
+    }
+
+    private void OnDisable()
+    {
+        Disconnect();
+    }
+
     protected virtual void Disconnect()
     {
 

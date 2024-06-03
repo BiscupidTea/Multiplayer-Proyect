@@ -19,21 +19,41 @@ public class UdpConnection
 
     public UdpConnection(int port, IReceiveData receiver = null)
     {
-        connection = new UdpClient(port);
+        try
+        {
+            connection = new UdpClient(port);
+            connection.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            this.receiver = receiver;
 
-        this.receiver = receiver;
+            connection.BeginReceive(OnReceive, null);
+        }
+        catch (Exception e)
+        {
 
-        connection.BeginReceive(OnReceive, null);
+        }
+
     }
 
-    public UdpConnection(IPAddress ip, int port, IReceiveData receiver = null)
+    public UdpConnection(IPAddress ip, int port, string tag, IReceiveData receiver = null)
     {
-        connection = new UdpClient();
-        connection.Connect(ip, port);
+        try
+        {
+            connection = new UdpClient();
+            connection.Connect(ip, port);
+            this.receiver = receiver;
 
-        this.receiver = receiver;
+            connection.BeginReceive(OnReceive, null);
 
-        connection.BeginReceive(OnReceive, null);
+            NetHandShake handShake = new NetHandShake(MessageType.StartHandShake);
+            handShake.data = tag;
+            Send(handShake.Serialize());
+
+        }
+        catch (Exception e)
+        {
+
+            
+        }
     }
 
     public void Close()
