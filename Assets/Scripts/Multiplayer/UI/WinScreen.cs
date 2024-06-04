@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class WinScreen : MonoBehaviourSingleton<WinScreen>
+public class WinScreen : MonoBehaviour
 {
     [SerializeField] private bool Start = false;
     [SerializeField] private float maxTime;

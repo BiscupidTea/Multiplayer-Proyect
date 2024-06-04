@@ -24,10 +24,10 @@ public enum MessageType
     ContinueHandShake,
     Disconnect,
     MessageError,
+    PingPong,
     String,
     Vector3,
     Quaternion,
-    PingPong,
     Time,
 }
 
@@ -211,14 +211,13 @@ public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
     protected static uint lastMsgID = 0;
 
     protected uint MsgID = 0;
-    protected static Dictionary<PayloadType, ulong> lastExecutedMsgID = new Dictionary<PayloadType, ulong>();
+    protected uint LastExecutedID = 0;
 }
 
 public class NetContinueHandShake : OrderableMessage<List<Player>>
 {
-    public NetContinueHandShake(List<Player> listPlayers)
+    public NetContinueHandShake()
     {
-        data = listPlayers;
         type = MessageType.ContinueHandShake;
         flags = MessageFlags.important;
     }
@@ -734,9 +733,8 @@ public class NetTimer : OrderableMessage<float>
 
 public class ErrorMessage : OrderableMessage<ErrorMessageType>
 {
-    public ErrorMessage(ErrorMessageType errorMessageType)
+    public ErrorMessage()
     {
-        data = errorMessageType;
         type = MessageType.MessageError;
     }
 

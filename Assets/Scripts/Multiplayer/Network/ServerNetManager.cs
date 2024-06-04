@@ -51,19 +51,22 @@ public class ServerNetManager : NetworkManager
                     }
                     else
                     {
-                        ErrorMessage errorMessage = new ErrorMessage(ErrorMessageType.invalidUserName);
+                        ErrorMessage errorMessage = new ErrorMessage();
+                        errorMessage.data = ErrorMessageType.invalidUserName;
                         SendToClient(errorMessage.Serialize(), ip);
                     }
                 }
                 else
                 {
-                    ErrorMessage errorMessage = new ErrorMessage(ErrorMessageType.ServerFull);
+                    ErrorMessage errorMessage = new ErrorMessage();
+                    errorMessage.data = ErrorMessageType.ServerFull;
                     SendToClient(errorMessage.Serialize(), ip);
                 }
             }
             else
             {
-                ErrorMessage errorMessage = new ErrorMessage(ErrorMessageType.GameStarted);
+                ErrorMessage errorMessage = new ErrorMessage();
+                errorMessage.data = ErrorMessageType.GameStarted;
                 SendToClient(errorMessage.Serialize(), ip);
             }
 
@@ -89,7 +92,8 @@ public class ServerNetManager : NetworkManager
         client.IsConected = false;
         players.Remove(playerDelete);
 
-        NetContinueHandShake netContinueHand = new NetContinueHandShake(players);
+        NetContinueHandShake netContinueHand = new NetContinueHandShake();
+        netContinueHand.data = players;
         Broadcast(netContinueHand.Serialize());
     }
 
@@ -196,7 +200,8 @@ public class ServerNetManager : NetworkManager
         if (TryAddClient(ip, newPlayerName))
         {
             //re send handshake
-            NetContinueHandShake netContinueHand = new NetContinueHandShake(players);
+            NetContinueHandShake netContinueHand = new NetContinueHandShake();
+            netContinueHand.data = players;
             Broadcast(netContinueHand.Serialize());
 
             //start player ping

@@ -8,7 +8,7 @@ public enum modifyCanvas
     chatScreen,
 }
 
-public class CanvasSwitcher : MonoBehaviourSingleton<CanvasSwitcher>
+public class CanvasSwitcher : MonoBehaviour
 {
     [SerializeField] private GameObject networkScreen;
     [SerializeField] private GameObject loadingScreen;

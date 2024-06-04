@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
-using System.Threading;
 using UnityEngine;
 
 public class ClientNetManager : NetworkManager
@@ -9,13 +9,12 @@ public class ClientNetManager : NetworkManager
     [SerializeField] private bool isConnected;
 
     private DateTime currentTimePing;
-
     protected override void OnStart()
     {
         base.OnStart();
 
         isConnected = false;
-        connection = new UdpConnection(ipAddress, port, myPlayer.clientId,this);
+        connection = new UdpConnection(ipAddress, port, myPlayer.clientId, this);
     }
 
 
@@ -30,13 +29,11 @@ public class ClientNetManager : NetworkManager
             SendToServer(netHandShakeExit.Serialize());
 
             isConnected = false;
-            
+
             connection.Close();
- 
+
             //switch to network screen
         }
-
-
     }
 
     public override void OnReceiveDataEvent(byte[] data, IPEndPoint ip)
@@ -50,12 +47,19 @@ public class ClientNetManager : NetworkManager
         bool haveCheckSum = flags.HasFlag(MessageFlags.checksum);
         bool isOrdenable = flags.HasFlag(MessageFlags.ordenable);
         bool isImportant = flags.HasFlag(MessageFlags.important);
-        bool readMessage = false;
 
         if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
         {
             if (isOrdenable)
             {
+                if (ordenableMessages.ContainsKey(messageType))
+                {
+
+                }
+                else
+                {
+                    ordenableMessages.Add(messageType, new OrderableMessage<>);
+                }
 
                 if (isImportant)
                 {
@@ -114,14 +118,16 @@ public class ClientNetManager : NetworkManager
         throw new NotImplementedException();
     }
 
-    private void CheckErrorType(byte[] data)
+    private ErrorMessageType CheckErrorType(byte[] data)
     {
-        throw new NotImplementedException();
+        ErrorMessage errorMessage = new ErrorMessage();
+        return errorMessage.Deserialize(data);
     }
 
     private void RefreshPlayerList(byte[] data)
     {
-        throw new NotImplementedException();
+        NetContinueHandShake newPlayers = new NetContinueHandShake();
+        players = newPlayers.Deserialize(data);
     }
 
     public override void CheckTimeOut()
@@ -130,8 +136,6 @@ public class ClientNetManager : NetworkManager
         {
             Disconnect();
             Debug.Log("disconnected from server = Time out: " + (DateTime.UtcNow - currentTimePing).Seconds);
-
-            CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.networkScreen);
         }
     }
 

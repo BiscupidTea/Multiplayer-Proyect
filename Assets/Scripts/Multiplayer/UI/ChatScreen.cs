@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ChatScreen : MonoBehaviourSingleton<ChatScreen>
+public class ChatScreen : MonoBehaviour
 {
     public Text messages;
     public InputField inputMessage;

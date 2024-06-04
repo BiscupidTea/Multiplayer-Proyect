@@ -38,6 +38,21 @@ public abstract class NetworkManager : MonoBehaviour, IReceiveData
 
     public Player myPlayer;
 
+    public Dictionary<MessageType, OrderableMessage<uint>> ordenableMessages;
+
+    public void Initialize(int port, IPAddress iPAddress)
+    {
+        this.port = port;
+        this.ipAddress = iPAddress;
+    }
+
+    public void Initialize(int port, IPAddress iPAddress, Player player)
+    {
+        this.port = port;
+        this.ipAddress = iPAddress;
+        this.myPlayer = player;
+    }
+
     private void OnEnable()
     {
         OnStart();
@@ -75,7 +90,7 @@ public abstract class NetworkManager : MonoBehaviour, IReceiveData
 
     public Player GetPlayer(int id)
     {
-        foreach (Player player in players) 
+        foreach (Player player in players)
         {
             if (player.id == id)
             {

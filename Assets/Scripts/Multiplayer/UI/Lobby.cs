@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Lobby : MonoBehaviourSingleton<Lobby>
+public class Lobby : MonoBehaviour
 {
     [SerializeField] private Text[] playerSpaces;
     [SerializeField] private bool Start = false;

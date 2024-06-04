@@ -3,24 +3,29 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
 
-public class LoadingScreen : MonoBehaviourSingleton<LoadingScreen>
+public class LoadingScreen : MonoBehaviour
 {
     public Text LoadingMessage;
     public Text messages;
     public Button backToMenuBtn;
 
+    public ClientNetManager client;
+
     IPAddress ipAddress;
     string playerNameString;
     int port;
 
-    protected override void Initialize()
+    private void OnEnable()
     {
         backToMenuBtn.onClick.AddListener(BackToMenu);
-
-        this.gameObject.SetActive(false);
     }
 
-    public void SwitchToLoadingScreen(InputField addressInputField, InputField portInputField, InputField playerName)
+    private void OnDisable()
+    {
+        backToMenuBtn.onClick.RemoveListener(BackToMenu);
+    }
+
+    public void StartLoadingScreen(InputField addressInputField, InputField portInputField, InputField playerName)
     {
         messages.gameObject.SetActive(false);
         backToMenuBtn.gameObject.SetActive(false);
@@ -29,6 +34,7 @@ public class LoadingScreen : MonoBehaviourSingleton<LoadingScreen>
         port = System.Convert.ToInt32(portInputField.text);
         playerNameString = playerName.text;
 
+        client.on
         NetworkManager.Instance.StartClient(ipAddress, port, playerNameString);
         StartCoroutine(UpdateTimer());
     }

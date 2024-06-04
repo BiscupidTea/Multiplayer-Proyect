@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameManager : MonoBehaviourSingleton<GameManager>
+public class GameManager : MonoBehaviour
 {
     [SerializeField] private PlayerSpawn[] playerSpawn;
     [SerializeField] private GameObject[] playerList;
