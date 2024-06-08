@@ -29,6 +29,7 @@ public abstract class NetworkManager : MonoBehaviour, IReceiveData
     }
 
     public int TimeOut = 5;
+    public int ImportantMessageTimeOut = 3;
 
     public Action<byte[], IPEndPoint> OnReceiveEvent;
 
@@ -38,7 +39,8 @@ public abstract class NetworkManager : MonoBehaviour, IReceiveData
 
     public Player myPlayer;
 
-    public Dictionary<MessageType, OrderableMessage<uint>> ordenableMessages;
+    public Dictionary<MessageType, List<CacheMessage>> pendingMessages;
+    public Dictionary<MessageType, uint> LastMessage;
 
     public void Initialize(int port, IPAddress iPAddress)
     {
@@ -104,6 +106,7 @@ public abstract class NetworkManager : MonoBehaviour, IReceiveData
     public abstract void CheckTimeOut();
     public abstract void OnUpdate();
     public abstract void CheckPingPong(byte[] data, IPEndPoint ip);
+    public abstract void MessageConfirmation(byte[] data);
 
 
     void Update()

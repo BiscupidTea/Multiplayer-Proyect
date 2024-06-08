@@ -22,6 +22,7 @@ public enum MessageType
 {
     StartHandShake = 0,
     ContinueHandShake,
+    ConfirmImportantMessage,
     Disconnect,
     MessageError,
     PingPong,
@@ -597,6 +598,56 @@ public class PingPong : OrderableMessage<int>
     }
 }
 
+public class ConfirmationMessage : OrderableMessage<MessageType>
+{
+    public ConfirmationMessage()
+    {
+        type = MessageType.ConfirmImportantMessage;
+        flags = MessageFlags.none;
+    }
+
+    public override MessageType Deserialize(byte[] message)
+    {
+        MessageType outData;
+
+        outData = (MessageType)BitConverter.ToInt32(message, messagePosition);
+
+        return outData;
+    }
+
+    public override MessageType GetData()
+    {
+        return data;
+    }
+
+    public override MessageFlags GetMessageFlag()
+    {
+        return flags;
+    }
+
+    public override MessageType GetMessageType()
+    {
+        return type;
+    }
+
+    public override byte[] Serialize()
+    {
+        List<byte> outData = new List<byte>();
+
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+
+        //set flag
+        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
+
+        SetId(outData);
+
+        outData.AddRange(BitConverter.GetBytes((int)data));
+        InsertCheckSum((outData));
+
+        return outData.ToArray();
+    }
+}
+
 public class NetTimer : OrderableMessage<float>
 {
     NetTimer()
@@ -647,89 +698,6 @@ public class NetTimer : OrderableMessage<float>
         return outData.ToArray();
     }
 }
-
-//public class NetServerActionMade : OrderableMessage<(ServerActionMade, int)>
-//{
-//    public override (ServerActionMade, int) Deserialize(byte[] message)
-//    {
-//        (ServerActionMade, int) outData;
-
-//        outData.Item1 = (ServerActionMade)BitConverter.ToInt32(message, messagePosition);
-//        outData.Item2 = BitConverter.ToInt32(message, messagePosition + 4);
-
-//        return outData;
-//    }
-
-//    public override (ServerActionMade, int) GetData()
-//    {
-//        return data;
-//    }
-
-//    public override MessageType GetMessageType()
-//    {
-//        return type;
-//    }
-
-//    public override byte[] Serialize()
-//    {
-//        List<byte> outData = new List<byte>();
-
-//        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
-
-//        SetId(outData); //set id
-
-//        outData.AddRange(BitConverter.GetBytes((int)data.Item1));
-//        outData.AddRange(BitConverter.GetBytes(data.Item2));
-//        InsertCheckSum(outData);
-
-//        return outData.ToArray();
-//    }
-//}
-
-//public class NetPlayerActionMade : OrderableMessage<(PlayerActionMade, int, Vector3)>
-//{
-//    public override (PlayerActionMade, int, Vector3) Deserialize(byte[] message)
-//    {
-//        (PlayerActionMade, int, Vector3) outData;
-
-//        outData.Item1 = (PlayerActionMade)BitConverter.ToInt32(message, messagePosition);
-//        outData.Item2 = BitConverter.ToInt32(message, messagePosition + 4);
-//        outData.Item3.x = BitConverter.ToSingle(message, messagePosition + 8);
-//        outData.Item3.y = BitConverter.ToSingle(message, messagePosition + 12);
-//        outData.Item3.z = BitConverter.ToSingle(message, messagePosition + 16);
-
-//        return outData;
-//    }
-
-//    public override (PlayerActionMade, int, Vector3) GetData()
-//    {
-//        return data;
-//    }
-
-//    public override MessageType GetMessageType()
-//    {
-//        return type;
-//    }
-
-//    public override byte[] Serialize()
-//    {
-//        List<byte> outData = new List<byte>();
-
-//        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
-
-//        SetId(outData); //set id
-
-//        outData.AddRange(BitConverter.GetBytes((int)data.Item1));
-//        outData.AddRange(BitConverter.GetBytes(data.Item2));
-//        outData.AddRange(BitConverter.GetBytes(data.Item3.x));
-//        outData.AddRange(BitConverter.GetBytes(data.Item3.y));
-//        outData.AddRange(BitConverter.GetBytes(data.Item3.z));
-
-//        InsertCheckSum(outData);
-
-//        return outData.ToArray();
-//    }
-//}
 
 public class ErrorMessage : OrderableMessage<ErrorMessageType>
 {

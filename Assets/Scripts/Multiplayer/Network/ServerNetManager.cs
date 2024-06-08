@@ -8,6 +8,8 @@ public class ServerNetManager : NetworkManager
     private readonly Dictionary<IPEndPoint, int> ipToId = new Dictionary<IPEndPoint, int>();
     public int clientId = 0; // This id should be generated during first handshake
 
+    private Dictionary<Client, List<CacheMessage>> messagesToSend;
+
     private int maxPlayers = 4;
     private float lobbyTime;
     private float preGameTime;
@@ -118,19 +120,52 @@ public class ServerNetManager : NetworkManager
         MessageType messageType = (MessageType)BitConverter.ToInt32(data, 0);
         MessageFlags flags = (MessageFlags)currentFlags;
 
+
         bool haveCheckSum = flags.HasFlag(MessageFlags.checksum);
         bool isOrdenable = flags.HasFlag(MessageFlags.ordenable);
         bool isImportant = flags.HasFlag(MessageFlags.important);
-        bool readMessage = false;
+
+        uint ordenableNumber = BitConverter.ToUInt32(data, 8);
 
         if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
         {
-            if (isOrdenable)
+
+            if (isOrdenable && isImportant)
             {
 
-                if (isImportant)
+                if (!LastMessage.ContainsKey(messageType))
                 {
-
+                    LastMessage.Add(messageType, ordenableNumber);
+                }
+                else
+                {
+                    if (ordenableNumber == LastMessage[messageType] + 1)
+                    {
+                        LastMessage[messageType] = ordenableNumber;
+                    }
+                    else
+                    {
+                        pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
+                        return;
+                    }
+                }
+            }
+            else if (isOrdenable)
+            {
+                if (!LastMessage.ContainsKey(messageType))
+                {
+                    LastMessage.Add(messageType, ordenableNumber);
+                }
+                else
+                {
+                    if (ordenableNumber > LastMessage[messageType])
+                    {
+                        LastMessage[messageType] = ordenableNumber;
+                    }
+                    else
+                    {
+                        return;
+                    }
                 }
             }
         }
@@ -139,8 +174,34 @@ public class ServerNetManager : NetworkManager
             return;
         }
 
+        ExecuteMessage(data, ip, messageType);
+
+        CheckPendingMessage(data, ip, messageType, ordenableNumber);
+    }
+
+    private void CheckPendingMessage(byte[] data, IPEndPoint ip, MessageType messageType, uint ordenableNumber)
+    {
+        foreach (CacheMessage message in pendingMessages[messageType])
+        {
+            if (message.id == ordenableNumber + 1)
+            {
+                ExecuteMessage(data, ip, messageType);
+                LastMessage[messageType] = message.id;
+
+                CheckPendingMessage(data, ip, messageType, LastMessage[messageType]);
+                break;
+            }
+        }
+    }
+
+    private void ExecuteMessage(byte[] data, IPEndPoint ip, MessageType messageType)
+    {
         switch (messageType)
         {
+            case MessageType.ConfirmImportantMessage:
+                MessageConfirmation(data);
+                break;
+
             case MessageType.StartHandShake:
                 StartHandShake(data, ip);
                 break;
@@ -153,11 +214,25 @@ public class ServerNetManager : NetworkManager
                 NetHandShake endHandShake = new NetHandShake(MessageType.Disconnect);
                 DisconnectPlayer(GetClient(endHandShake.Deserialize(data)));
                 break;
-
-            default:
-                Console.WriteLine("Received Unknown Message: " + messageType);
-                break;
         }
+    }
+
+    public override void MessageConfirmation(byte[] data)
+    {
+        ConfirmationMessage confirmationMessage = new ConfirmationMessage();
+        confirmationMessage.data = confirmationMessage.Deserialize(data);
+
+        foreach (var client in messagesToSend)
+        {
+            foreach (var m in client.Value)
+            {
+                if (m.type == confirmationMessage.data && m.id == confirmationMessage.GetId(data) && !m.Received)
+                {
+                    m.Received = true;
+                }
+            }
+        }
+
     }
 
     public void SendToClient(byte[] data, IPEndPoint ip)
@@ -208,11 +283,6 @@ public class ServerNetManager : NetworkManager
             PingPong pingPong = new PingPong();
             GetClient(ip).LastMessageRecived = DateTime.UtcNow;
             SendToClient(pingPong.Serialize(), ip);
-
-            //inform player entered
-            NetString welcomeMessage = new NetString();
-            welcomeMessage.data = ("The player " + newPlayerName + " Has joined");
-            Broadcast(welcomeMessage.Serialize());
         }
     }
 
@@ -236,7 +306,20 @@ public class ServerNetManager : NetworkManager
 
     public override void OnUpdate()
     {
-
+        if (messagesToSend.Count > 0)
+        {
+            foreach (var client in messagesToSend)
+            {
+                foreach (var m in client.Value)
+                {
+                    if ((DateTime.UtcNow - m.lastEmission).Seconds > ImportantMessageTimeOut)
+                    {
+                        SendToClient(m.message, client.Key.clientId);
+                        m.lastEmission = DateTime.UtcNow;
+                    }
+                }
+            }
+        }
     }
 
     public override void CheckTimeOut()

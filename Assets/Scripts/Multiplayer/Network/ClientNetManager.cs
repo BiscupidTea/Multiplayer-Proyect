@@ -8,6 +8,8 @@ public class ClientNetManager : NetworkManager
     public Player playerData;
     [SerializeField] private bool isConnected;
 
+    private List<CacheMessage> messagesToSend;
+
     private DateTime currentTimePing;
     protected override void OnStart()
     {
@@ -48,22 +50,47 @@ public class ClientNetManager : NetworkManager
         bool isOrdenable = flags.HasFlag(MessageFlags.ordenable);
         bool isImportant = flags.HasFlag(MessageFlags.important);
 
+        uint ordenableNumber = BitConverter.ToUInt32(data, 8);
+
         if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
         {
-            if (isOrdenable)
-            {
-                if (ordenableMessages.ContainsKey(messageType))
-                {
 
+            if (isOrdenable && isImportant)
+            {
+
+                if (!LastMessage.ContainsKey(messageType))
+                {
+                    LastMessage.Add(messageType, ordenableNumber);
                 }
                 else
                 {
-                    ordenableMessages.Add(messageType, new OrderableMessage<>);
+                    if (ordenableNumber == LastMessage[messageType] + 1)
+                    {
+                        LastMessage[messageType] = ordenableNumber;
+                    }
+                    else
+                    {
+                        pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
+                        return;
+                    }
                 }
-
-                if (isImportant)
+            }
+            else if (isOrdenable)
+            {
+                if (!LastMessage.ContainsKey(messageType))
                 {
-
+                    LastMessage.Add(messageType, ordenableNumber);
+                }
+                else
+                {
+                    if (ordenableNumber > LastMessage[messageType])
+                    {
+                        LastMessage[messageType] = ordenableNumber;
+                    }
+                    else
+                    {
+                        return;
+                    }
                 }
             }
         }
@@ -72,8 +99,34 @@ public class ClientNetManager : NetworkManager
             return;
         }
 
+        ExecuteMessage(data, ip, messageType);
+
+        CheckPendingMessage(data, ip, messageType, ordenableNumber);
+    }
+
+    private void CheckPendingMessage(byte[] data, IPEndPoint ip, MessageType messageType, uint ordenableNumber)
+    {
+        foreach (CacheMessage message in pendingMessages[messageType])
+        {
+            if (message.id == ordenableNumber + 1)
+            {
+                ExecuteMessage(data, ip, messageType);
+                LastMessage[messageType] = message.id;
+
+                CheckPendingMessage(data, ip, messageType, LastMessage[messageType]);
+                break;
+            }
+        }
+    }
+
+    private void ExecuteMessage(byte[] data, IPEndPoint ip, MessageType messageType)
+    {
         switch (messageType)
         {
+            case MessageType.ConfirmImportantMessage:
+                MessageConfirmation(data);
+                break;
+
             case MessageType.ContinueHandShake:
                 RefreshPlayerList(data);
                 break;
@@ -100,6 +153,20 @@ public class ClientNetManager : NetworkManager
 
             case MessageType.Time:
                 break;
+        }
+    }
+
+    public override void MessageConfirmation(byte[] data)
+    {
+        ConfirmationMessage confirmationMessage = new ConfirmationMessage();
+        confirmationMessage.data = confirmationMessage.Deserialize(data);
+
+        foreach (var m in messagesToSend)
+        {
+            if (m.type == confirmationMessage.data && m.id == confirmationMessage.GetId(data) && !m.Received)
+            {
+                m.Received = true;
+            }
         }
     }
 
@@ -144,14 +211,30 @@ public class ClientNetManager : NetworkManager
         currentTimePing = DateTime.UtcNow;
     }
 
-    public void SendToServer(byte[] data)
+    public void SendMessageToServer(byte[] data, MessageType messageType)
+    {
+        messagesToSend.Add(new CacheMessage(data, BitConverter.ToUInt32(data, 8), messageType));
+        SendToServer(data);
+    }
+
+    private void SendToServer(byte[] data)
     {
         connection.Send(data);
     }
 
     public override void OnUpdate()
     {
-
+        if (messagesToSend.Count > 0)
+        {
+            foreach (CacheMessage message in messagesToSend)
+            {
+                if ((DateTime.UtcNow - message.lastEmission).Seconds > ImportantMessageTimeOut)
+                {
+                    SendToServer(message.message);
+                    message.lastEmission = DateTime.UtcNow;
+                }
+            }
+        }
     }
 
 }
