@@ -51,52 +51,52 @@ public class ClientNetManager : NetworkManager
 
         uint ordenableNumber = BitConverter.ToUInt32(data, 8);
 
-        //if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
-        //{
+        if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
+        {
 
-        //    if (isOrdenable && isImportant)
-        //    {
+            if (isOrdenable && isImportant)
+            {
 
-        //        if (!LastMessage.ContainsKey(messageType))
-        //        {
-        //            LastMessage.Add(messageType, ordenableNumber);
-        //        }
-        //        else
-        //        {
-        //            if (ordenableNumber == LastMessage[messageType] + 1)
-        //            {
-        //                LastMessage[messageType] = ordenableNumber;
-        //            }
-        //            else
-        //            {
-        //                pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
-        //                return;
-        //            }
-        //        }
-        //    }
-        //    else if (isOrdenable)
-        //    {
-        //        if (!LastMessage.ContainsKey(messageType))
-        //        {
-        //            LastMessage.Add(messageType, ordenableNumber);
-        //        }
-        //        else
-        //        {
-        //            if (ordenableNumber > LastMessage[messageType])
-        //            {
-        //                LastMessage[messageType] = ordenableNumber;
-        //            }
-        //            else
-        //            {
-        //                return;
-        //            }
-        //        }
-        //    }
-        //}
-        //else
-        //{
-        //    return;
-        //}
+                if (!LastMessage.ContainsKey(messageType))
+                {
+                    LastMessage.Add(messageType, ordenableNumber);
+                }
+                else
+                {
+                    if (ordenableNumber == LastMessage[messageType] + 1)
+                    {
+                        LastMessage[messageType] = ordenableNumber;
+                    }
+                    else
+                    {
+                        pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
+                        return;
+                    }
+                }
+            }
+            else if (isOrdenable)
+            {
+                if (!LastMessage.ContainsKey(messageType))
+                {
+                    LastMessage.Add(messageType, ordenableNumber);
+                }
+                else
+                {
+                    if (ordenableNumber > LastMessage[messageType])
+                    {
+                        LastMessage[messageType] = ordenableNumber;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+            }
+        }
+        else
+        {
+            return;
+        }
 
         Debug.Log("Message recieved - " + messageType);
 

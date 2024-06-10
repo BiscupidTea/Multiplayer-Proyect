@@ -39,7 +39,7 @@ public class ServerNetManager : NetworkManager
         {
             if (gameStarted)
             {
-                if (clients.Count < maxPlayers)
+                if (CheckCurrentPlayers())
                 {
                     if (CheckUserName(userName))
                     {
@@ -79,6 +79,27 @@ public class ServerNetManager : NetworkManager
         return false;
     }
 
+    private bool CheckCurrentPlayers()
+    {
+        int currentsPlayers = 0;
+        foreach (var player in clients) 
+        {
+            if (player.Value.IsConected)
+            {
+                currentsPlayers++;
+            }
+        }
+
+        if (currentsPlayers > maxPlayers)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
     public void DisconnectPlayer(Client client)
     {
         Player playerDelete = new("", -100);
@@ -105,7 +126,7 @@ public class ServerNetManager : NetworkManager
     {
         foreach (var currentPlayer in players)
         {
-            if (currentPlayer.clientId == userNameCheck)
+            if (currentPlayer.clientId == userNameCheck && GetClient(currentPlayer.clientId).IsConected)
             {
                 return false;
             }
@@ -129,57 +150,58 @@ public class ServerNetManager : NetworkManager
 
         uint ordenableNumber = BitConverter.ToUInt32(data, 8);
 
-        //if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
-        //{
 
-        //    if (isOrdenable && isImportant)
-        //    {
+        if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
+        {
 
-        //        if (!LastMessage.ContainsKey(messageType))
-        //        {
-        //            LastMessage.Add(messageType, ordenableNumber);
-        //        }
-        //        else
-        //        {
-        //            if (ordenableNumber == LastMessage[messageType] + 1)
-        //            {
-        //                LastMessage[messageType] = ordenableNumber;
-        //            }
-        //            else
-        //            {
-        //                pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
-        //                Debug.Log("Disscard Message - checksum");
-        //                return;
-        //            }
-        //        }
-        //    }
-        //    else if (isOrdenable)
-        //    {
-        //        if (!LastMessage.ContainsKey(messageType))
-        //        {
-        //            LastMessage.Add(messageType, ordenableNumber);
-        //        }
-        //        else
-        //        {
-        //            if (ordenableNumber > LastMessage[messageType])
-        //            {
-        //                LastMessage[messageType] = ordenableNumber;
-        //            }
-        //            else
-        //            {
-        //                Debug.Log("Disscard Message - checksum");
-        //                return;
-        //            }
-        //        }
-        //    }
-        //}
-        //else
-        //{
-        //    Debug.Log("Disscard Message - checksum");
-        //    return;
-        //}
+            if (isOrdenable && isImportant)
+            {
 
-        Debug.Log("Message recieved - " + messageType);
+                if (!LastMessage.ContainsKey(messageType))
+                {
+                    LastMessage.Add(messageType, ordenableNumber);
+                }
+                else
+                {
+                    if (ordenableNumber == LastMessage[messageType] + 1)
+                    {
+                        LastMessage[messageType] = ordenableNumber;
+                    }
+                    else
+                    {
+                        pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
+                        Debug.Log("Save Message - Wait Previous Message");
+                        return;
+                    }
+                }
+            }
+            else if (isOrdenable)
+            {
+                if (!LastMessage.ContainsKey(messageType))
+                {
+                    LastMessage.Add(messageType, ordenableNumber);
+                }
+                else
+                {
+                    if (ordenableNumber > LastMessage[messageType])
+                    {
+                        LastMessage[messageType] = ordenableNumber;
+                    }
+                    else
+                    {
+                        Debug.Log("Discard Message - ordenable");
+                        return;
+                    }
+                }
+            }
+        }
+        else
+        {
+            Debug.Log("Discard Message - checksum");
+            return;
+        }
+
+        Debug.Log("Message received - " + messageType);
 
         ExecuteMessage(data, ip, messageType);
 
@@ -343,7 +365,7 @@ public class ServerNetManager : NetworkManager
         {
             foreach (var client in clients)
             {
-                if (TimeOut < (DateTime.UtcNow - client.Value.LastMessageRecived).TotalSeconds)
+                if (TimeOut < (DateTime.UtcNow - client.Value.LastMessageRecived).TotalSeconds && client.Value.IsConected)
                 {
                     DisconnectPlayer(client.Value);
                 }

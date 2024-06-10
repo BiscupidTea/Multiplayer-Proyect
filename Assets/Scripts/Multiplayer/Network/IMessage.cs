@@ -315,7 +315,7 @@ public class NetHandShake : OrderableMessage<string>
     public NetHandShake(MessageType messageType)
     {
         type = messageType;
-        flags = MessageFlags.important;
+        flags = MessageFlags.important|MessageFlags.ordenable|MessageFlags.checksum;
     }
 
     public override string Deserialize(byte[] message)
@@ -550,10 +550,10 @@ public class NetString : OrderableMessage<string>
 
 public class PingPong : OrderableMessage<int>
 {
-    public PingPong() 
+    public PingPong()
     {
         type = MessageType.PingPong;
-        flags = MessageFlags.none;
+        flags = MessageFlags.checksum;
     }
 
     public override int Deserialize(byte[] message)
@@ -589,8 +589,8 @@ public class PingPong : OrderableMessage<int>
         //set flag
         outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
 
-        SetId(outData); 
-        
+        SetId(outData);
+
         outData.AddRange(BitConverter.GetBytes(data));
         InsertCheckSum((outData));
 
