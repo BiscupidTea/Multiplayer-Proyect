@@ -4,45 +4,45 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public int id;
-    public float moveSpeed;
-    public float rotationSpeed;
-    private NetVector3 position = new NetVector3();
-    private NetQuaternion rotation = new NetQuaternion();
-    private Rigidbody rb;
+    //public int id;
+    //public float moveSpeed;
+    //public float rotationSpeed;
+    //private NetVector3 position = new NetVector3();
+    //private NetQuaternion rotation = new NetQuaternion();
+    //private Rigidbody rb;
 
-    private void Start()
-    {
-        rb = GetComponent<Rigidbody>();
-    }
+    //private void Start()
+    //{
+    //    rb = GetComponent<Rigidbody>();
+    //}
 
-    private void Update()
-    {
-        float moveVertical = Input.GetAxis("Vertical");
-        float turn = Input.GetAxis("Horizontal");
+    //private void Update()
+    //{
+    //    float moveVertical = Input.GetAxis("Vertical");
+    //    float turn = Input.GetAxis("Horizontal");
 
-        if (moveVertical != 0 || turn != 0)
-        {
-            MovePlayer(moveVertical, turn);
-        }
-    }
+    //    if (moveVertical != 0 || turn != 0)
+    //    {
+    //        MovePlayer(moveVertical, turn);
+    //    }
+    //}
 
-    private void MovePlayer(float moveVertical, float turn)
-    {
-        Vector3 movement = transform.forward * moveVertical * moveSpeed * Time.deltaTime;
-        rb.MovePosition(rb.position + movement);
+    //private void MovePlayer(float moveVertical, float turn)
+    //{
+    //    Vector3 movement = transform.forward * moveVertical * moveSpeed * Time.deltaTime;
+    //    rb.MovePosition(rb.position + movement);
 
-        float turnAngle = turn * rotationSpeed * Time.deltaTime;
-        Quaternion turnRotation = Quaternion.Euler(0f, turnAngle, 0f);
+    //    float turnAngle = turn * rotationSpeed * Time.deltaTime;
+    //    Quaternion turnRotation = Quaternion.Euler(0f, turnAngle, 0f);
 
-        rb.MoveRotation(rb.rotation * turnRotation);
+    //    rb.MoveRotation(rb.rotation * turnRotation);
 
-        rotation.data.Item1 = transform.rotation;
-        rotation.data.Item2 = id;
-        NetworkManager.Instance.SendToServer(rotation.Serialize());
+    //    rotation.data.Item1 = transform.rotation;
+    //    rotation.data.Item2 = id;
+    //    NetworkManager.Instance.SendToServer(rotation.Serialize());
 
-        position.data.Item1 = transform.position;
-        position.data.Item2 = id;
-        NetworkManager.Instance.SendToServer(position.Serialize());
-    }
+    //    position.data.Item1 = transform.position;
+    //    position.data.Item2 = id;
+    //    NetworkManager.Instance.SendToServer(position.Serialize());
+    //}
 }

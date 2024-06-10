@@ -3,67 +3,73 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
 
-public class LoadingScreen : MonoBehaviourSingleton<LoadingScreen>
+public class LoadingScreen : MonoBehaviour
 {
-    public Text LoadingMessage;
-    public Text messages;
-    public Button backToMenuBtn;
+    //public Text LoadingMessage;
+    //public Text messages;
+    //public Button backToMenuBtn;
 
-    IPAddress ipAddress;
-    string playerNameString;
-    int port;
+    //public ClientNetManager client;
 
-    protected override void Initialize()
-    {
-        backToMenuBtn.onClick.AddListener(BackToMenu);
+    //IPAddress ipAddress;
+    //string playerNameString;
+    //int port;
 
-        this.gameObject.SetActive(false);
-    }
+    //private void OnEnable()
+    //{
+    //    backToMenuBtn.onClick.AddListener(BackToMenu);
+    //}
 
-    public void SwitchToLoadingScreen(InputField addressInputField, InputField portInputField, InputField playerName)
-    {
-        messages.gameObject.SetActive(false);
-        backToMenuBtn.gameObject.SetActive(false);
+    //private void OnDisable()
+    //{
+    //    backToMenuBtn.onClick.RemoveListener(BackToMenu);
+    //}
 
-        ipAddress = IPAddress.Parse(addressInputField.text);
-        port = System.Convert.ToInt32(portInputField.text);
-        playerNameString = playerName.text;
+    //public void StartLoadingScreen(InputField addressInputField, InputField portInputField, InputField playerName)
+    //{
+    //    messages.gameObject.SetActive(false);
+    //    backToMenuBtn.gameObject.SetActive(false);
 
-        NetworkManager.Instance.StartClient(ipAddress, port, playerNameString);
-        StartCoroutine(UpdateTimer());
-    }
+    //    ipAddress = IPAddress.Parse(addressInputField.text);
+    //    port = System.Convert.ToInt32(portInputField.text);
+    //    playerNameString = playerName.text;
 
-    IEnumerator UpdateTimer()
-    {
-        yield return new WaitForSeconds(0.7f);
-        switch (LoadingMessage.text)
-        {
-            case "Loading.":
-                LoadingMessage.text = "Loading..";
-                break;
+    //    client.on
+    //    NetworkManager.Instance.StartClient(ipAddress, port, playerNameString);
+    //    StartCoroutine(UpdateTimer());
+    //}
 
-            case "Loading..":
-                LoadingMessage.text = "Loading...";
-                break;
+    //IEnumerator UpdateTimer()
+    //{
+    //    yield return new WaitForSeconds(0.7f);
+    //    switch (LoadingMessage.text)
+    //    {
+    //        case "Loading.":
+    //            LoadingMessage.text = "Loading..";
+    //            break;
 
-            case "Loading...":
-                LoadingMessage.text = "Loading.";
-                break;
-        }
+    //        case "Loading..":
+    //            LoadingMessage.text = "Loading...";
+    //            break;
 
-        StartCoroutine(UpdateTimer());
-    }
+    //        case "Loading...":
+    //            LoadingMessage.text = "Loading.";
+    //            break;
+    //    }
 
-    public void ShowErrorMessage(string errorMessage)
-    {
-        messages.gameObject.SetActive(true);
-        messages.text = errorMessage;
-        Debug.LogWarning(errorMessage);
-        backToMenuBtn.gameObject.SetActive(true);
-    }
+    //    StartCoroutine(UpdateTimer());
+    //}
 
-    public void BackToMenu()
-    {
-        CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.networkScreen);
-    }
+    //public void ShowErrorMessage(string errorMessage)
+    //{
+    //    messages.gameObject.SetActive(true);
+    //    messages.text = errorMessage;
+    //    Debug.LogWarning(errorMessage);
+    //    backToMenuBtn.gameObject.SetActive(true);
+    //}
+
+    //public void BackToMenu()
+    //{
+    //    CanvasSwitcher.Instance.SwitchCanvas(modifyCanvas.networkScreen);
+    //}
 }

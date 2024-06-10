@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public enum modifyCanvas
 {
@@ -11,7 +8,7 @@ public enum modifyCanvas
     chatScreen,
 }
 
-public class CanvasSwitcher : MonoBehaviourSingleton<CanvasSwitcher>
+public class CanvasSwitcher : MonoBehaviour
 {
     [SerializeField] private GameObject networkScreen;
     [SerializeField] private GameObject loadingScreen;

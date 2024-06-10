@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using UnityEngine;
 
 public class UdpConnection
 {
@@ -20,21 +19,41 @@ public class UdpConnection
 
     public UdpConnection(int port, IReceiveData receiver = null)
     {
-        connection = new UdpClient(port);
+        try
+        {
+            connection = new UdpClient(port);
+            connection.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            this.receiver = receiver;
 
-        this.receiver = receiver;
+            connection.BeginReceive(OnReceive, null);
+        }
+        catch (Exception e)
+        {
 
-        connection.BeginReceive(OnReceive, null);
+        }
+
     }
 
-    public UdpConnection(IPAddress ip, int port, IReceiveData receiver = null)
+    public UdpConnection(IPAddress ip, int port, string tag, IReceiveData receiver = null)
     {
-        connection = new UdpClient();
-        connection.Connect(ip, port);
+        try
+        {
+            connection = new UdpClient();
+            connection.Connect(ip, port);
+            this.receiver = receiver;
 
-        this.receiver = receiver;
+            connection.BeginReceive(OnReceive, null);
 
-        connection.BeginReceive(OnReceive, null);
+            NetHandShake handShake = new NetHandShake(MessageType.StartHandShake);
+            handShake.data = tag;
+            Send(handShake.Serialize());
+
+        }
+        catch (Exception e)
+        {
+
+            
+        }
     }
 
     public void Close()
@@ -60,15 +79,12 @@ public class UdpConnection
         DataReceived dataReceived = new DataReceived();
         try
         {
-            lock (handler)
-            {
-                dataReceived.data = connection.EndReceive(ar, ref dataReceived.ipEndPoint);
-            }
+            dataReceived.data = connection.EndReceive(ar, ref dataReceived.ipEndPoint);
         }
         catch (SocketException e)
         {
             // This happens when a client disconnects, as we fail to send to that port.
-            UnityEngine.Debug.LogError("[UdpConnection] " + e.Message);
+            UnityEngine.Debug.LogWarning("[UdpConnection] " + e.Message);
         }
 
         lock (handler)
