@@ -5,10 +5,9 @@ using UnityEngine;
 
 public class ClientNetManager : NetworkManager
 {
-    public Player playerData;
     [SerializeField] private bool isConnected;
 
-    private List<CacheMessage> messagesToSend;
+    private List<CacheMessage> messagesToSend = new();
 
     private DateTime currentTimePing;
     protected override void OnStart()
@@ -27,7 +26,7 @@ public class ClientNetManager : NetworkManager
         if (isConnected)
         {
             NetHandShake netHandShakeExit = new NetHandShake(MessageType.Disconnect);
-            netHandShakeExit.data = playerData.clientId;
+            netHandShakeExit.data = myPlayer.clientId;
             SendToServer(netHandShakeExit.Serialize());
 
             isConnected = false;
@@ -52,52 +51,54 @@ public class ClientNetManager : NetworkManager
 
         uint ordenableNumber = BitConverter.ToUInt32(data, 8);
 
-        if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
-        {
+        //if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
+        //{
 
-            if (isOrdenable && isImportant)
-            {
+        //    if (isOrdenable && isImportant)
+        //    {
 
-                if (!LastMessage.ContainsKey(messageType))
-                {
-                    LastMessage.Add(messageType, ordenableNumber);
-                }
-                else
-                {
-                    if (ordenableNumber == LastMessage[messageType] + 1)
-                    {
-                        LastMessage[messageType] = ordenableNumber;
-                    }
-                    else
-                    {
-                        pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
-                        return;
-                    }
-                }
-            }
-            else if (isOrdenable)
-            {
-                if (!LastMessage.ContainsKey(messageType))
-                {
-                    LastMessage.Add(messageType, ordenableNumber);
-                }
-                else
-                {
-                    if (ordenableNumber > LastMessage[messageType])
-                    {
-                        LastMessage[messageType] = ordenableNumber;
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-            }
-        }
-        else
-        {
-            return;
-        }
+        //        if (!LastMessage.ContainsKey(messageType))
+        //        {
+        //            LastMessage.Add(messageType, ordenableNumber);
+        //        }
+        //        else
+        //        {
+        //            if (ordenableNumber == LastMessage[messageType] + 1)
+        //            {
+        //                LastMessage[messageType] = ordenableNumber;
+        //            }
+        //            else
+        //            {
+        //                pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
+        //                return;
+        //            }
+        //        }
+        //    }
+        //    else if (isOrdenable)
+        //    {
+        //        if (!LastMessage.ContainsKey(messageType))
+        //        {
+        //            LastMessage.Add(messageType, ordenableNumber);
+        //        }
+        //        else
+        //        {
+        //            if (ordenableNumber > LastMessage[messageType])
+        //            {
+        //                LastMessage[messageType] = ordenableNumber;
+        //            }
+        //            else
+        //            {
+        //                return;
+        //            }
+        //        }
+        //    }
+        //}
+        //else
+        //{
+        //    return;
+        //}
+
+        Debug.Log("Message recieved - " + messageType);
 
         ExecuteMessage(data, ip, messageType);
 
@@ -106,15 +107,18 @@ public class ClientNetManager : NetworkManager
 
     private void CheckPendingMessage(byte[] data, IPEndPoint ip, MessageType messageType, uint ordenableNumber)
     {
-        foreach (CacheMessage message in pendingMessages[messageType])
+        if (pendingMessages.Count > 0)
         {
-            if (message.id == ordenableNumber + 1)
+            foreach (CacheMessage message in pendingMessages[messageType])
             {
-                ExecuteMessage(data, ip, messageType);
-                LastMessage[messageType] = message.id;
+                if (message.id == ordenableNumber + 1)
+                {
+                    ExecuteMessage(data, ip, messageType);
+                    LastMessage[messageType] = message.id;
 
-                CheckPendingMessage(data, ip, messageType, LastMessage[messageType]);
-                break;
+                    CheckPendingMessage(data, ip, messageType, LastMessage[messageType]);
+                    break;
+                }
             }
         }
     }
@@ -152,6 +156,10 @@ public class ClientNetManager : NetworkManager
                 break;
 
             case MessageType.Time:
+                break;
+
+            default:
+                Debug.Log("Message type Not Found");
                 break;
         }
     }
@@ -195,6 +203,14 @@ public class ClientNetManager : NetworkManager
     {
         NetContinueHandShake newPlayers = new NetContinueHandShake();
         players = newPlayers.Deserialize(data);
+        foreach (var p in newPlayers.Deserialize(data))
+        {
+            if (p.clientId == myPlayer.clientId)
+            {
+                myPlayer.clientId = p.clientId;
+                myPlayer.id = p.id;
+            }
+        }
     }
 
     public override void CheckTimeOut()
@@ -209,6 +225,8 @@ public class ClientNetManager : NetworkManager
     public override void CheckPingPong(byte[] data, IPEndPoint ip)
     {
         currentTimePing = DateTime.UtcNow;
+        PingPong pingPong = new PingPong();
+        SendToServer(pingPong.Serialize());
     }
 
     public void SendMessageToServer(byte[] data, MessageType messageType)

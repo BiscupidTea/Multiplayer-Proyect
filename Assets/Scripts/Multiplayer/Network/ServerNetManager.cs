@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using UnityEngine;
 
 public class ServerNetManager : NetworkManager
 {
@@ -8,7 +9,7 @@ public class ServerNetManager : NetworkManager
     private readonly Dictionary<IPEndPoint, int> ipToId = new Dictionary<IPEndPoint, int>();
     public int clientId = 0; // This id should be generated during first handshake
 
-    private Dictionary<Client, List<CacheMessage>> messagesToSend;
+    private Dictionary<Client, List<CacheMessage>> messagesToSend = new();
 
     private int maxPlayers = 4;
     private float lobbyTime;
@@ -16,6 +17,7 @@ public class ServerNetManager : NetworkManager
     private float gameTime;
 
     private bool gameStarted = false;
+    private int cacheMessages = 0;
 
     protected override void OnStart()
     {
@@ -127,52 +129,57 @@ public class ServerNetManager : NetworkManager
 
         uint ordenableNumber = BitConverter.ToUInt32(data, 8);
 
-        if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
-        {
+        //if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
+        //{
 
-            if (isOrdenable && isImportant)
-            {
+        //    if (isOrdenable && isImportant)
+        //    {
 
-                if (!LastMessage.ContainsKey(messageType))
-                {
-                    LastMessage.Add(messageType, ordenableNumber);
-                }
-                else
-                {
-                    if (ordenableNumber == LastMessage[messageType] + 1)
-                    {
-                        LastMessage[messageType] = ordenableNumber;
-                    }
-                    else
-                    {
-                        pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
-                        return;
-                    }
-                }
-            }
-            else if (isOrdenable)
-            {
-                if (!LastMessage.ContainsKey(messageType))
-                {
-                    LastMessage.Add(messageType, ordenableNumber);
-                }
-                else
-                {
-                    if (ordenableNumber > LastMessage[messageType])
-                    {
-                        LastMessage[messageType] = ordenableNumber;
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-            }
-        }
-        else
-        {
-            return;
-        }
+        //        if (!LastMessage.ContainsKey(messageType))
+        //        {
+        //            LastMessage.Add(messageType, ordenableNumber);
+        //        }
+        //        else
+        //        {
+        //            if (ordenableNumber == LastMessage[messageType] + 1)
+        //            {
+        //                LastMessage[messageType] = ordenableNumber;
+        //            }
+        //            else
+        //            {
+        //                pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
+        //                Debug.Log("Disscard Message - checksum");
+        //                return;
+        //            }
+        //        }
+        //    }
+        //    else if (isOrdenable)
+        //    {
+        //        if (!LastMessage.ContainsKey(messageType))
+        //        {
+        //            LastMessage.Add(messageType, ordenableNumber);
+        //        }
+        //        else
+        //        {
+        //            if (ordenableNumber > LastMessage[messageType])
+        //            {
+        //                LastMessage[messageType] = ordenableNumber;
+        //            }
+        //            else
+        //            {
+        //                Debug.Log("Disscard Message - checksum");
+        //                return;
+        //            }
+        //        }
+        //    }
+        //}
+        //else
+        //{
+        //    Debug.Log("Disscard Message - checksum");
+        //    return;
+        //}
+
+        Debug.Log("Message recieved - " + messageType);
 
         ExecuteMessage(data, ip, messageType);
 
@@ -181,15 +188,18 @@ public class ServerNetManager : NetworkManager
 
     private void CheckPendingMessage(byte[] data, IPEndPoint ip, MessageType messageType, uint ordenableNumber)
     {
-        foreach (CacheMessage message in pendingMessages[messageType])
+        if (pendingMessages.Count > 0)
         {
-            if (message.id == ordenableNumber + 1)
+            foreach (CacheMessage message in pendingMessages[messageType])
             {
-                ExecuteMessage(data, ip, messageType);
-                LastMessage[messageType] = message.id;
+                if (message.id == ordenableNumber + 1)
+                {
+                    ExecuteMessage(data, ip, messageType);
+                    LastMessage[messageType] = message.id;
 
-                CheckPendingMessage(data, ip, messageType, LastMessage[messageType]);
-                break;
+                    CheckPendingMessage(data, ip, messageType, LastMessage[messageType]);
+                    break;
+                }
             }
         }
     }
@@ -213,6 +223,10 @@ public class ServerNetManager : NetworkManager
             case MessageType.Disconnect:
                 NetHandShake endHandShake = new NetHandShake(MessageType.Disconnect);
                 DisconnectPlayer(GetClient(endHandShake.Deserialize(data)));
+                break;
+
+            default:
+                Debug.Log("Message type Not Found");
                 break;
         }
     }
@@ -306,6 +320,7 @@ public class ServerNetManager : NetworkManager
 
     public override void OnUpdate()
     {
+        cacheMessages = messagesToSend.Count;
         if (messagesToSend.Count > 0)
         {
             foreach (var client in messagesToSend)

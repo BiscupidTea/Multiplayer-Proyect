@@ -39,8 +39,8 @@ public abstract class NetworkManager : MonoBehaviour, IReceiveData
 
     public Player myPlayer;
 
-    public Dictionary<MessageType, List<CacheMessage>> pendingMessages;
-    public Dictionary<MessageType, uint> LastMessage;
+    public Dictionary<MessageType, List<CacheMessage>> pendingMessages = new();
+    public Dictionary<MessageType, uint> LastMessage = new();
 
     public void Initialize(int port, IPAddress iPAddress)
     {
@@ -57,11 +57,13 @@ public abstract class NetworkManager : MonoBehaviour, IReceiveData
 
     private void OnEnable()
     {
+        Debug.Log("Start");
         OnStart();
     }
 
     private void OnDisable()
     {
+        Debug.Log("Disconnect");
         Disconnect();
     }
 

@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,8 +13,6 @@ public class NetworkScreen : MonoBehaviour
     public GameObject server;
     public GameObject client;
 
-    public ChannelSO<int> switchCanvas;
-
     private void OnEnable()
     {
         connectBtn.onClick.AddListener(OnConnectBtnClick);
@@ -24,26 +21,33 @@ public class NetworkScreen : MonoBehaviour
         client.SetActive(false);
     }
 
+    private void OnDisable()
+    {
+        connectBtn.onClick.RemoveListener(OnConnectBtnClick);
+        startServerBtn.onClick.RemoveListener(OnStartServerBtnClick);
+    }
+
     void OnConnectBtnClick()
     {
-        switchCanvas.RaiseEvent((int)modifyCanvas.loadingScreen);
+        Debug.Log(portInputField.text);
 
-        LoadingScreen.Instance.SwitchToLoadingScreen(addressInputField, portInputField, playerName);
-
-        client.SetActive(true);
         client.GetComponent<ClientNetManager>().Initialize(
         System.Convert.ToInt32(portInputField.text),
-            IPAddress.Parse(addressInputField.text));
+            IPAddress.Parse(addressInputField.text),
+            new Player(playerName.text, -1));
+        client.SetActive(true);
+
+        gameObject.SetActive(false);
     }
 
     void OnStartServerBtnClick()
     {
-        switchCanvas.RaiseEvent((int)modifyCanvas.lobby);
-
-        server.SetActive(true);
         server.GetComponent<ServerNetManager>().Initialize(
             System.Convert.ToInt32(portInputField.text),
             IPAddress.Parse(addressInputField.text),
             new Player("server", -1));
+        server.SetActive(true);
+
+        gameObject.SetActive(false);
     }
 }

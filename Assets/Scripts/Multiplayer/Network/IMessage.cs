@@ -323,11 +323,11 @@ public class NetHandShake : OrderableMessage<string>
         string outData;
 
         outData = "";
-        int messageLenght = BitConverter.ToInt32(message, messagePosition + 4);
+        int messageLenght = BitConverter.ToInt32(message, messagePosition);
 
         for (int i = 0; i < messageLenght; i++)
         {
-            outData += (char)message[messagePosition + 8 + i];
+            outData += (char)message[messagePosition + 4 + i];
         }
         return outData;
     }
