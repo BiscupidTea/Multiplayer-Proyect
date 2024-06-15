@@ -1,7 +1,5 @@
-using System.Collections.Generic;
-using UnityEngine;
-using System;
-using System.Linq;
+namespace BT_NetworkSystem;
+
 
 // 0 = Message Type
 // 4 = flag
@@ -42,7 +40,7 @@ public enum Operation
 
 public enum ErrorMessageType
 {
-    invalidUserName,
+    InvalidUserName,
     ServerFull,
     GameStarted,
 }
@@ -214,7 +212,7 @@ public class NetContinueHandShake : OrderableMessage<List<Player>>
         int currentPosition = messagePosition;
 
         int totalPlayers = BitConverter.ToInt32(message, currentPosition);
-        Debug.Log("total player: " + totalPlayers);
+        Console.Write("total player: " + totalPlayers);
 
         currentPosition += 4;
 
@@ -229,7 +227,7 @@ public class NetContinueHandShake : OrderableMessage<List<Player>>
 
             //client id lenght
             int clientIdLenght = BitConverter.ToInt32(message, currentPosition);
-            Debug.Log(clientIdLenght);
+            Console.Write(clientIdLenght);
 
             string clientId = "";
             currentPosition += 4;
@@ -241,7 +239,7 @@ public class NetContinueHandShake : OrderableMessage<List<Player>>
                 currentPosition += 1;
             }
 
-            Debug.Log(clientId + " : " + Id);
+            Console.Write(clientId + " : " + Id);
             newPlayerList.Add(new Player(clientId, Id));
         }
 
@@ -358,181 +356,181 @@ public class NetHandShake : OrderableMessage<string>
     }
 }
 
-public class NetVector3 : OrderableMessage<(Vector3, int)>
-{
-    public NetVector3()
-    {
-        type = MessageType.Vector3;
-        flags = MessageFlags.important;
-    }
-    public override (Vector3, int) Deserialize(byte[] message)
-    {
-        (Vector3, int) outData;
+// public class NetVector3 : OrderableMessage<(Vector3, int)>
+// {
+//     public NetVector3()
+//     {
+//         type = MessageType.Vector3;
+//         flags = MessageFlags.important;
+//     }
+//     public override (Vector3, int) Deserialize(byte[] message)
+//     {
+//         (Vector3, int) outData;
+//
+//         outData.Item2 = BitConverter.ToInt32(message, messagePosition);
+//         outData.Item1.x = BitConverter.ToSingle(message, messagePosition + 4);
+//         outData.Item1.y = BitConverter.ToSingle(message, messagePosition + 8);
+//         outData.Item1.z = BitConverter.ToSingle(message, messagePosition + 12);
+//
+//         return outData;
+//     }
+//
+//     public override (Vector3, int) GetData()
+//     {
+//         return data;
+//     }
+//
+//     public override MessageFlags GetMessageFlag()
+//     {
+//         return flags;
+//     }
+//
+//     public override MessageType GetMessageType()
+//     {
+//         return type;
+//     }
+//
+//     public override byte[] Serialize()
+//     {
+//         List<byte> outData = new List<byte>();
+//
+//         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+//
+//         //set flag
+//         outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
+//
+//         SetId(outData);
+//
+//         outData.AddRange(BitConverter.GetBytes(data.Item2));
+//         outData.AddRange(BitConverter.GetBytes(data.Item1.x));
+//         outData.AddRange(BitConverter.GetBytes(data.Item1.y));
+//         outData.AddRange(BitConverter.GetBytes(data.Item1.z));
+//
+//         InsertCheckSum(outData);
+//
+//         return outData.ToArray();
+//     }
+// }
 
-        outData.Item2 = BitConverter.ToInt32(message, messagePosition);
-        outData.Item1.x = BitConverter.ToSingle(message, messagePosition + 4);
-        outData.Item1.y = BitConverter.ToSingle(message, messagePosition + 8);
-        outData.Item1.z = BitConverter.ToSingle(message, messagePosition + 12);
-
-        return outData;
-    }
-
-    public override (Vector3, int) GetData()
-    {
-        return data;
-    }
-
-    public override MessageFlags GetMessageFlag()
-    {
-        return flags;
-    }
-
-    public override MessageType GetMessageType()
-    {
-        return type;
-    }
-
-    public override byte[] Serialize()
-    {
-        List<byte> outData = new List<byte>();
-
-        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
-
-        //set flag
-        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
-
-        SetId(outData);
-
-        outData.AddRange(BitConverter.GetBytes(data.Item2));
-        outData.AddRange(BitConverter.GetBytes(data.Item1.x));
-        outData.AddRange(BitConverter.GetBytes(data.Item1.y));
-        outData.AddRange(BitConverter.GetBytes(data.Item1.z));
-
-        InsertCheckSum(outData);
-
-        return outData.ToArray();
-    }
-}
-
-public class NetQuaternion : OrderableMessage<(Quaternion, int)>
-{
-    public NetQuaternion()
-    {
-        type = MessageType.Quaternion;
-        flags = MessageFlags.important;
-    }
-    public override (Quaternion, int) Deserialize(byte[] message)
-    {
-        (Quaternion, int) outData;
-
-        outData.Item2 = BitConverter.ToInt32(message, messagePosition);
-        outData.Item1.x = BitConverter.ToSingle(message, messagePosition + 4);
-        outData.Item1.y = BitConverter.ToSingle(message, messagePosition + 8);
-        outData.Item1.z = BitConverter.ToSingle(message, messagePosition + 12);
-        outData.Item1.w = BitConverter.ToSingle(message, messagePosition + 16);
-
-        return outData;
-    }
-
-    public override (Quaternion, int) GetData()
-    {
-        return data;
-    }
-
-    public override MessageFlags GetMessageFlag()
-    {
-        return flags;
-    }
-
-    public override MessageType GetMessageType()
-    {
-        return type;
-    }
-
-    public override byte[] Serialize()
-    {
-        List<byte> outData = new List<byte>();
-
-        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
-
-        //set flag
-        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
-
-        SetId(outData);
-
-        outData.AddRange(BitConverter.GetBytes(data.Item2));
-        outData.AddRange(BitConverter.GetBytes(data.Item1.x));
-        outData.AddRange(BitConverter.GetBytes(data.Item1.y));
-        outData.AddRange(BitConverter.GetBytes(data.Item1.z));
-        outData.AddRange(BitConverter.GetBytes(data.Item1.w));
-
-        InsertCheckSum(outData);
-
-        return outData.ToArray();
-    }
-}
-
-public class NetString : OrderableMessage<string>
-{
-    public NetString()
-    {
-        type = MessageType.String;
-        flags = MessageFlags.important;
-    }
-    public override string Deserialize(byte[] message)
-    {
-        string outData;
-
-        //message
-        outData = "";
-        int messageLenght = BitConverter.ToInt32(message, messagePosition);
-
-        for (int i = 0; i < messageLenght; i++)
-        {
-            outData += (char)message[messagePosition + 4 + i];
-        }
-
-        return outData;
-    }
-
-    public override string GetData()
-    {
-        return data;
-    }
-
-    public override MessageFlags GetMessageFlag()
-    {
-        return flags;
-    }
-
-    public override MessageType GetMessageType()
-    {
-        return type;
-    }
-
-    public override byte[] Serialize()
-    {
-        List<byte> outData = new List<byte>();
-
-        outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
-
-        //set flag
-        outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
-
-        //set id
-        SetId(outData);
-
-        outData.AddRange(BitConverter.GetBytes(data.Length));
-
-        for (int i = 0; i < data.Length; i++)
-        {
-            outData.Add((byte)data[i]);
-        }
-
-        InsertCheckSum(outData);
-        return outData.ToArray();
-    }
-}
+// public class NetQuaternion : OrderableMessage<(Quaternion, int)>
+// {
+//     public NetQuaternion()
+//     {
+//         type = MessageType.Quaternion;
+//         flags = MessageFlags.important;
+//     }
+//     public override (Quaternion, int) Deserialize(byte[] message)
+//     {
+//         (Quaternion, int) outData;
+//
+//         outData.Item2 = BitConverter.ToInt32(message, messagePosition);
+//         outData.Item1.x = BitConverter.ToSingle(message, messagePosition + 4);
+//         outData.Item1.y = BitConverter.ToSingle(message, messagePosition + 8);
+//         outData.Item1.z = BitConverter.ToSingle(message, messagePosition + 12);
+//         outData.Item1.w = BitConverter.ToSingle(message, messagePosition + 16);
+//
+//         return outData;
+//     }
+//
+//     public override (Quaternion, int) GetData()
+//     {
+//         return data;
+//     }
+//
+//     public override MessageFlags GetMessageFlag()
+//     {
+//         return flags;
+//     }
+//
+//     public override MessageType GetMessageType()
+//     {
+//         return type;
+//     }
+//
+//     public override byte[] Serialize()
+//     {
+//         List<byte> outData = new List<byte>();
+//
+//         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+//
+//         //set flag
+//         outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
+//
+//         SetId(outData);
+//
+//         outData.AddRange(BitConverter.GetBytes(data.Item2));
+//         outData.AddRange(BitConverter.GetBytes(data.Item1.x));
+//         outData.AddRange(BitConverter.GetBytes(data.Item1.y));
+//         outData.AddRange(BitConverter.GetBytes(data.Item1.z));
+//         outData.AddRange(BitConverter.GetBytes(data.Item1.w));
+//
+//         InsertCheckSum(outData);
+//
+//         return outData.ToArray();
+//     }
+// }
+//
+// public class NetString : OrderableMessage<string>
+// {
+//     public NetString()
+//     {
+//         type = MessageType.String;
+//         flags = MessageFlags.important;
+//     }
+//     public override string Deserialize(byte[] message)
+//     {
+//         string outData;
+//
+//         //message
+//         outData = "";
+//         int messageLenght = BitConverter.ToInt32(message, messagePosition);
+//
+//         for (int i = 0; i < messageLenght; i++)
+//         {
+//             outData += (char)message[messagePosition + 4 + i];
+//         }
+//
+//         return outData;
+//     }
+//
+//     public override string GetData()
+//     {
+//         return data;
+//     }
+//
+//     public override MessageFlags GetMessageFlag()
+//     {
+//         return flags;
+//     }
+//
+//     public override MessageType GetMessageType()
+//     {
+//         return type;
+//     }
+//
+//     public override byte[] Serialize()
+//     {
+//         List<byte> outData = new List<byte>();
+//
+//         outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+//
+//         //set flag
+//         outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
+//
+//         //set id
+//         SetId(outData);
+//
+//         outData.AddRange(BitConverter.GetBytes(data.Length));
+//
+//         for (int i = 0; i < data.Length; i++)
+//         {
+//             outData.Add((byte)data[i]);
+//         }
+//
+//         InsertCheckSum(outData);
+//         return outData.ToArray();
+//     }
+// }
 
 public class PingPong : OrderableMessage<int>
 {
