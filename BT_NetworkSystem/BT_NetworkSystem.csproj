@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy &quot;$(TargetDir)$(TargetName).dll&quot; &quot;$(ProjectDir)..\UnityProject\Assets\Lib&quot; /Y&#xA;xcopy &quot;$(TargetDir)$(TargetName).dll&quot; &quot;$(ProjectDir)..\Server&quot; /Y&#xA;xcopy &quot;$(TargetDir)$(TargetName).dll&quot; &quot;$(ProjectDir)..\MatchMaker&quot; /Y" />
+  </Target>
+
 </Project>

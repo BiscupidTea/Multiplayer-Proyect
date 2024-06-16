@@ -7,4 +7,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="BT_NetworkSystem">
+      <HintPath>BT_NetworkSystem.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

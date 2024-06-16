@@ -1,8 +1,8 @@
-﻿
-namespace BT_NetworkSystem
+﻿namespace BT_NetworkSystem
 {
     using System.Net;
     using System.Net.Sockets;
+
     public class UdpConnection
     {
         private struct DataReceived
@@ -29,6 +29,7 @@ namespace BT_NetworkSystem
             }
             catch (Exception e)
             {
+                Console.Write("Unable to create connection");
             }
         }
 
@@ -48,6 +49,7 @@ namespace BT_NetworkSystem
             }
             catch (Exception e)
             {
+                Console.Write("Unable to create connection");
             }
         }
 
@@ -63,8 +65,7 @@ namespace BT_NetworkSystem
                 while (dataReceivedQueue.Count > 0)
                 {
                     DataReceived dataReceived = dataReceivedQueue.Dequeue();
-                    if (receiver != null)
-                        receiver.OnReceiveData(dataReceived.data, dataReceived.ipEndPoint);
+                    receiver.OnReceiveData(dataReceived.data, dataReceived.ipEndPoint);
                 }
             }
         }
@@ -79,15 +80,18 @@ namespace BT_NetworkSystem
             catch (SocketException e)
             {
                 // This happens when a client disconnects, as we fail to send to that port.
-                Console.Write("[UdpConnection] " + e.Message);
+                //OnSocketError?.Invoke("[UdpConnection] " + e.Message);
+                Console.WriteLine("[UdpConnection] " + e.Message);
             }
-
-            lock (handler)
+            finally
             {
-                dataReceivedQueue?.Enqueue(dataReceived);
-            }
+                lock (handler)
+                {
+                    dataReceivedQueue?.Enqueue(dataReceived);
+                }
 
-            connection.BeginReceive(OnReceive, null);
+                connection.BeginReceive(OnReceive, null);
+            }
         }
 
         public void Send(byte[] data)

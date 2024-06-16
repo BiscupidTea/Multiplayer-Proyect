@@ -39,6 +39,13 @@ public class ClientNetManager : NetworkManager
 
     public override void OnReceiveDataEvent(byte[] data, IPEndPoint ip)
     {
+        Debug.Log("Something Recieved");
+
+        if (ip == null)
+        {
+            return;
+        }
+
         CheckSumReeder checkSumReeder = new CheckSumReeder();
         int currentFlags = BitConverter.ToInt32(data, 4);
 
