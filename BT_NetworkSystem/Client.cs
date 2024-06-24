@@ -1,4 +1,7 @@
-﻿namespace BT_NetworkSystem
+﻿using System;
+using System.Collections.Generic;
+
+namespace BT_NetworkSystem
 {
     using System.Net;
 
@@ -10,6 +13,8 @@
         public bool IsConected;
         public IPEndPoint ipEndPoint;
         public DateTime LastMessageRecived;
+        
+        public Dictionary<MessageType, uint> LastMessage = new Dictionary<MessageType, uint>();
 
         public Client(IPEndPoint ipEndPoint, int id)
         {

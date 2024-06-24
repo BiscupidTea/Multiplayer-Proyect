@@ -1,8 +1,9 @@
-namespace BT_NetworkSystem;
-
-public enum GameStates
+namespace BT_NetworkSystem
 {
-    WaitingPlayers,
-    StartCooldown,
-    GameStarted
+    public enum GameStates
+    {
+        WaitingPlayers,
+        StartCooldown,
+        GameStarted
+    }
 }

@@ -1,20 +1,23 @@
-namespace BT_NetworkSystem;
+using System;
 
-[Serializable]
-public class CacheMessage
+namespace BT_NetworkSystem
 {
-    public byte[] message;
-    public uint id;
-    public MessageType type;
-    public DateTime lastEmission;
-    public bool Received;
-
-    public CacheMessage(byte[] message, uint id, MessageType type)
+    [Serializable]
+    public class CacheMessage
     {
-        this.message = message;
-        this.id = id;
-        this.type = type;
-        lastEmission = DateTime.UtcNow;
-        Received = false;
+        public byte[] message;
+        public uint id;
+        public MessageType type;
+        public DateTime lastEmission;
+        public bool Received;
+
+        public CacheMessage(byte[] message, uint id, MessageType type)
+        {
+            this.message = message;
+            this.id = id;
+            this.type = type;
+            lastEmission = DateTime.UtcNow;
+            Received = false;
+        }
     }
 }

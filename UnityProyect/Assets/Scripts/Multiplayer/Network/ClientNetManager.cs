@@ -2,38 +2,54 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using UnityEngine;
+using BT_NetworkSystem;
+using UnityEditor;
+using MessageType = BT_NetworkSystem.MessageType;
 
 public class ClientNetManager : NetworkManager
 {
-    [SerializeField] private bool isConnected;
+    public bool isConnected;
 
     private List<CacheMessage> messagesToSend = new();
 
-    private DateTime currentTimePing;
+    private DateTime currentTimePing = DateTime.UtcNow;
+
+    public Dictionary<MessageType, uint> LastMessage = new Dictionary<MessageType, uint>();
+
+    public ClientNetManager() : base()
+    {
+    }
+
+    public void StartClient()
+    {
+        OnStart();
+    }
+
     protected override void OnStart()
     {
         base.OnStart();
 
         isConnected = false;
-        connection = new UdpConnection(ipAddress, port, myPlayer.clientId, this);
     }
 
+    public void Connect()
+    {
+        Debug.Log(ipAddress + " , " + port + " , " + myPlayer.clientId);
+        connection = new UdpConnection(ipAddress, port, myPlayer.clientId, this);
+        isConnected = true;
+    }
 
     protected override void Disconnect()
     {
-        base.Disconnect();
-
         if (isConnected)
         {
-            NetHandShake netHandShakeExit = new NetHandShake(MessageType.Disconnect);
-            netHandShakeExit.data = myPlayer.clientId;
-            SendToServer(netHandShakeExit.Serialize());
+            base.Disconnect();
 
             isConnected = false;
 
             connection.Close();
-
-            //switch to network screen
+            Debug.Log("disconnect");
+            EditorApplication.isPlaying = false;
         }
     }
 
@@ -58,12 +74,12 @@ public class ClientNetManager : NetworkManager
 
         uint ordenableNumber = BitConverter.ToUInt32(data, 8);
 
+        Debug.Log("Message recieved - " + messageType);
+
         if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
         {
-
             if (isOrdenable && isImportant)
             {
-
                 if (!LastMessage.ContainsKey(messageType))
                 {
                     LastMessage.Add(messageType, ordenableNumber);
@@ -102,10 +118,9 @@ public class ClientNetManager : NetworkManager
         }
         else
         {
+            Debug.Log("Message Corrupted");
             return;
         }
-
-        Debug.Log("Message recieved - " + messageType);
 
         ExecuteMessage(data, ip, messageType);
 
@@ -180,6 +195,7 @@ public class ClientNetManager : NetworkManager
         {
             if (m.type == confirmationMessage.data && m.id == confirmationMessage.GetId(data) && !m.Received)
             {
+                Debug.Log("Message confirmed");
                 m.Received = true;
             }
         }
@@ -225,15 +241,33 @@ public class ClientNetManager : NetworkManager
         if ((DateTime.UtcNow - currentTimePing).Seconds > TimeOut)
         {
             Disconnect();
-            Debug.Log("disconnected from server = Time out: " + (DateTime.UtcNow - currentTimePing).Seconds);
+            Debug.Log("Disconnected from server = Time out: " + (DateTime.UtcNow - currentTimePing).Seconds);
+            // Debug.Log("UtcNow =" + DateTime.UtcNow);
+            // Debug.Log("currentTimePing =" + currentTimePing);
         }
+    }
+
+    public override void OnUpdateMessages()
+    {
+        // if (messagesToSend.Count > 0)
+        // {
+        //     foreach (CacheMessage message in messagesToSend)
+        //     {
+        //         if ((DateTime.UtcNow - message.lastEmission).Seconds > ImportantMessageTimeOut)
+        //         {
+        //             Debug.Log("Send important message");
+        //             SendToServer(message.message);
+        //             message.lastEmission = DateTime.UtcNow;
+        //         }
+        //     }
+        // }
     }
 
     public override void CheckPingPong(byte[] data, IPEndPoint ip)
     {
         currentTimePing = DateTime.UtcNow;
         PingPong pingPong = new PingPong();
-        SendToServer(pingPong.Serialize());
+        SendMessageToServer(pingPong.Serialize(), MessageType.PingPong);
     }
 
     public void SendMessageToServer(byte[] data, MessageType messageType)
@@ -246,20 +280,4 @@ public class ClientNetManager : NetworkManager
     {
         connection.Send(data);
     }
-
-    public override void OnUpdate()
-    {
-        if (messagesToSend.Count > 0)
-        {
-            foreach (CacheMessage message in messagesToSend)
-            {
-                if ((DateTime.UtcNow - message.lastEmission).Seconds > ImportantMessageTimeOut)
-                {
-                    SendToServer(message.message);
-                    message.lastEmission = DateTime.UtcNow;
-                }
-            }
-        }
-    }
-
 }

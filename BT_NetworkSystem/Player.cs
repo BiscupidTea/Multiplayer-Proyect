@@ -1,4 +1,6 @@
-﻿namespace BT_NetworkSystem
+﻿using System;
+
+namespace BT_NetworkSystem
 {
     [Serializable]
     public class Player

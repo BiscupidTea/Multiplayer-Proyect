@@ -1,7 +1,7 @@
 ﻿using System;
 using BT_NetworkSystem;
 
-public class MatchMaker
+file class MatchMaker
 {
     static void Main(string[] args)
     {

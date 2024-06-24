@@ -1,4 +1,7 @@
-﻿namespace BT_NetworkSystem
+﻿using System;
+using System.Collections.Generic;
+
+namespace BT_NetworkSystem
 {
     using System.Net;
     using System.Net.Sockets;
@@ -33,7 +36,7 @@
             }
         }
 
-        public UdpConnection(IPAddress ip, int port, string tag, IReceiveData receiver = null)
+        public UdpConnection(IPAddress ip, int port, string ClientId, IReceiveData receiver = null)
         {
             try
             {
@@ -44,11 +47,12 @@
                 connection.BeginReceive(OnReceive, null);
 
                 NetHandShake handShake = new NetHandShake(MessageType.StartHandShake);
-                handShake.data = tag;
+                handShake.data = ClientId;
                 Send(handShake.Serialize());
             }
             catch (Exception e)
             {
+                Console.Write(e);
                 Console.Write("Unable to create connection");
             }
         }
