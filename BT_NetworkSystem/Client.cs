@@ -13,7 +13,8 @@ namespace BT_NetworkSystem
         public bool IsConected;
         public IPEndPoint ipEndPoint;
         public DateTime LastMessageRecived;
-        
+
+        public Dictionary<MessageType, List<CacheMessage>> pendingMessages = new Dictionary<MessageType, List<CacheMessage>>();
         public Dictionary<MessageType, uint> LastMessage = new Dictionary<MessageType, uint>();
 
         public Client(IPEndPoint ipEndPoint, int id)

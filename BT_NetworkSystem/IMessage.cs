@@ -184,11 +184,11 @@ namespace BT_NetworkSystem
 
     public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
     {
-        protected ulong MsgID = 0;
-        protected ulong lastMsgID = 0;
+        protected uint MsgID = 0;
+        protected uint lastMsgID = 0;
         protected uint LastExecutedID = 0;
         
-        public ulong GetId(byte[] message)
+        public uint GetId(byte[] message)
         {
             MsgID = BitConverter.ToUInt32(message, ordenablePosition);
 
@@ -302,7 +302,7 @@ namespace BT_NetworkSystem
         public NetHandShake(MessageType messageType)
         {
             type = messageType;
-            flags = MessageFlags.checksum | MessageFlags.ordenable | MessageFlags.important;
+            flags = MessageFlags.important | MessageFlags.ordenable | MessageFlags.checksum;
         }
 
         public override string Deserialize(byte[] message)
@@ -316,9 +316,6 @@ namespace BT_NetworkSystem
             {
                 outData += (char)message[messagePosition + 4 + i];
             }
-            
-            Console.Write(messageLenght);
-            Console.Write("Deserialized name :" + outData);
             return outData;
         }
 

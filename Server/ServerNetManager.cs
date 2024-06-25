@@ -8,7 +8,7 @@ public class ServerNetManager : NetworkManager
     public int clientId = 0; // This id should be generated during first handshake
 
     private Dictionary<Client, List<CacheMessage>> messagesToSend = new();
-    
+
     private int maxPlayers = 4;
     // private float lobbyTime;
     // private float preGameTime;
@@ -26,7 +26,7 @@ public class ServerNetManager : NetworkManager
     {
         OnStart();
     }
-    
+
     protected override void OnStart()
     {
         clients.Clear();
@@ -59,11 +59,13 @@ public class ServerNetManager : NetworkManager
                         clients.Add(clientId, new Client(ip, id));
                         AddPlayer(new Player(userName, clientId));
                         clientId++;
-                        Console.WriteLine("ADD CLIENT::Client Ip = " + ip.Address + " - Client Id = " + userName+ "\n");
+                        Console.WriteLine("ADD CLIENT::Client Ip = " + ip.Address + " - Client Id = " + userName + "\n");
                         return true;
                     }
                     else
                     {
+                        Console.WriteLine("Can't add player: InvalidUserName\n");
+
                         ErrorMessage errorMessage = new ErrorMessage();
                         errorMessage.data = ErrorMessageType.InvalidUserName;
                         SendToClient(errorMessage.Serialize(), ip);
@@ -71,6 +73,8 @@ public class ServerNetManager : NetworkManager
                 }
                 else
                 {
+                    Console.WriteLine("Can't add player: ServerFull\n");
+
                     ErrorMessage errorMessage = new ErrorMessage();
                     errorMessage.data = ErrorMessageType.ServerFull;
                     SendToClient(errorMessage.Serialize(), ip);
@@ -78,20 +82,22 @@ public class ServerNetManager : NetworkManager
             }
             else
             {
+                Console.WriteLine("Can't add player: GameStarted\n");
+
                 ErrorMessage errorMessage = new ErrorMessage();
                 errorMessage.data = ErrorMessageType.GameStarted;
                 SendToClient(errorMessage.Serialize(), ip);
             }
 
         }
-        Console.WriteLine("Can't add player\n");
+        Console.WriteLine("Can't add player: ip alredy in use\n");
         return false;
     }
 
     private bool CheckCurrentPlayers()
     {
         int currentsPlayers = 0;
-        foreach (var player in clients) 
+        foreach (var player in clients)
         {
             if (player.Value.IsConected)
             {
@@ -120,7 +126,7 @@ public class ServerNetManager : NetworkManager
                 break;
             }
         }
-        
+
         Console.WriteLine("Remove CLIENT::Id = " + playerDelete.id + " - Client Id = " + playerDelete.clientId);
 
         client.IsConected = false;
@@ -158,7 +164,9 @@ public class ServerNetManager : NetworkManager
         bool isImportant = flags.HasFlag(MessageFlags.important);
 
         uint ordenableNumber = BitConverter.ToUInt32(data, 8);
-        
+
+        Console.Write("message recived - " + messageType + "\n");
+
         if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
         {
             if (messageType != MessageType.StartHandShake)
@@ -168,16 +176,18 @@ public class ServerNetManager : NetworkManager
                     if (!GetClient(ip).LastMessage.ContainsKey(messageType))
                     {
                         GetClient(ip).LastMessage.Add(messageType, ordenableNumber);
+                        Console.Write("Create new key\n");
                     }
                     else
                     {
                         if (ordenableNumber == GetClient(ip).LastMessage[messageType] + 1)
                         {
                             GetClient(ip).LastMessage[messageType] = ordenableNumber;
+                            Console.Write("Set last Message - ordenable important\n");
                         }
                         else
                         {
-                            pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
+                            GetClient(ip).pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
                             Console.Write("Save Message - Wait Previous Message\n");
                             return;
                         }
@@ -188,12 +198,14 @@ public class ServerNetManager : NetworkManager
                     if (!GetClient(ip).LastMessage.ContainsKey(messageType))
                     {
                         GetClient(ip).LastMessage.Add(messageType, ordenableNumber);
+                        Console.Write("Create new key\n");
                     }
                     else
                     {
                         if (ordenableNumber > GetClient(ip).LastMessage[messageType])
                         {
                             GetClient(ip).LastMessage[messageType] = ordenableNumber;
+                            Console.Write("Set last Message - ordenable\n");
                         }
                         else
                         {
@@ -202,7 +214,7 @@ public class ServerNetManager : NetworkManager
                         }
                     }
                 }
-                
+
             }
         }
         else
@@ -220,22 +232,25 @@ public class ServerNetManager : NetworkManager
 
     private void CheckPendingMessage(byte[] data, IPEndPoint ip, MessageType messageType, uint ordenableNumber)
     {
-        if (pendingMessages.Count > 0)
+        foreach (Client c in clients.Values)
         {
-            foreach (CacheMessage message in pendingMessages[messageType])
+            if (c.pendingMessages.Count > 0)
             {
-                if (message.id == ordenableNumber + 1)
+                foreach (CacheMessage message in c.pendingMessages[messageType])
                 {
-                    ExecuteMessage(data, ip, messageType);
-                    GetClient(ip).LastMessage[messageType] = message.id;
+                    if (message.id == ordenableNumber + 1)
+                    {
+                        ExecuteMessage(data, ip, messageType);
+                        GetClient(ip).LastMessage[messageType] = message.id;
 
-                    CheckPendingMessage(data, ip, messageType, GetClient(ip).LastMessage[messageType]);
-                    break;
+                        CheckPendingMessage(data, ip, messageType, GetClient(ip).LastMessage[messageType]);
+                        break;
+                    }
                 }
             }
         }
     }
-    
+
     private void ExecuteMessage(byte[] data, IPEndPoint ip, MessageType messageType)
     {
         switch (messageType)

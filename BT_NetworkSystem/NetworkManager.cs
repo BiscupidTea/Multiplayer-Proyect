@@ -21,8 +21,6 @@ namespace BT_NetworkSystem
 
         public Player myPlayer = new Player("PlayerNotInitialized", -1);
 
-        public Dictionary<MessageType, List<CacheMessage>> pendingMessages = new Dictionary<MessageType, List<CacheMessage>>();
-
         public void Initialize(Player player)
         {
             this.port = GetServerData().Item1;
@@ -104,7 +102,7 @@ namespace BT_NetworkSystem
 
         public (int, IPAddress) GetServerData()
         {
-            string addressField = "192.168.0.64";
+            string addressField = "192.168.200.157";
             string portField = "12345";
 
             (int, IPAddress) data;

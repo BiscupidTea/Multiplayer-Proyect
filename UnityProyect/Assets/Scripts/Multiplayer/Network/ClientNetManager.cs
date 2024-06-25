@@ -15,6 +15,7 @@ public class ClientNetManager : NetworkManager
     private DateTime currentTimePing = DateTime.UtcNow;
 
     public Dictionary<MessageType, uint> LastMessage = new Dictionary<MessageType, uint>();
+    public Dictionary<MessageType, List<CacheMessage>> pendingMessages = new Dictionary<MessageType, List<CacheMessage>>();
 
     public ClientNetManager() : base()
     {
@@ -36,6 +37,7 @@ public class ClientNetManager : NetworkManager
     {
         Debug.Log(ipAddress + " , " + port + " , " + myPlayer.clientId);
         connection = new UdpConnection(ipAddress, port, myPlayer.clientId, this);
+
         isConnected = true;
     }
 
@@ -49,7 +51,7 @@ public class ClientNetManager : NetworkManager
 
             connection.Close();
             Debug.Log("disconnect");
-            EditorApplication.isPlaying = false;
+            //EditorApplication.isPlaying = false;
         }
     }
 
@@ -92,7 +94,7 @@ public class ClientNetManager : NetworkManager
                     }
                     else
                     {
-                        pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
+                        //pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
                         return;
                     }
                 }
@@ -241,7 +243,7 @@ public class ClientNetManager : NetworkManager
         if ((DateTime.UtcNow - currentTimePing).Seconds > TimeOut)
         {
             Disconnect();
-            Debug.Log("Disconnected from server = Time out: " + (DateTime.UtcNow - currentTimePing).Seconds);
+            //Debug.Log("Disconnected from server = Time out: " + (DateTime.UtcNow - currentTimePing).Seconds);
             // Debug.Log("UtcNow =" + DateTime.UtcNow);
             // Debug.Log("currentTimePing =" + currentTimePing);
         }
