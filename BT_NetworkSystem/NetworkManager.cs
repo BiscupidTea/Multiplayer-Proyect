@@ -102,7 +102,7 @@ namespace BT_NetworkSystem
 
         public (int, IPAddress) GetServerData()
         {
-            string addressField = "192.168.200.157";
+            string addressField = "192.168.0.64";
             string portField = "12345";
 
             (int, IPAddress) data;

@@ -184,8 +184,8 @@ namespace BT_NetworkSystem
 
     public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
     {
-        protected uint MsgID = 0;
-        protected uint lastMsgID = 0;
+        protected static uint MsgID = 0;
+        protected static uint lastMsgID = 0;
         protected uint LastExecutedID = 0;
         
         public uint GetId(byte[] message)

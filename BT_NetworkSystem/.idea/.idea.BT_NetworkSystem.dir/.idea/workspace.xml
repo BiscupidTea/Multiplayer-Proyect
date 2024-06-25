@@ -5,45 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="69cb8e46-63e2-4f52-978a-1863dfc1e18c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.BT_NetworkSystem.dir/.idea/projectSettingsUpdater.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/ClientPrefab.prefab" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/ClientPrefab.prefab.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.BT_NetworkSystem.dir/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BT_NetworkSystem.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/BT_NetworkSystem.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CacheMessage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/CacheMessage.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Client.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Client.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GameStates.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GameStates.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.BT_NetworkSystem.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.BT_NetworkSystem.dir/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/IMessage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/IMessage.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NetworkManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/NetworkManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Player.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Player.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UdpConnection.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UdpConnection.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MatchMaker/BT_NetworkSystem.dll" beforeDir="false" afterPath="$PROJECT_DIR$/../MatchMaker/BT_NetworkSystem.dll" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MatchMaker/MatchMaker.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../MatchMaker/MatchMaker.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Server/BT_NetworkSystem.dll" beforeDir="false" afterPath="$PROJECT_DIR$/../Server/BT_NetworkSystem.dll" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Server/Server.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../Server/Server.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Server/ServerNetManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../Server/ServerNetManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scenes/TestScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Scenes/TestScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/BT_NetworkSystem.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/BT_NetworkSystem.dll.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/CacheMessage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/CacheMessage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/Client.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/Client.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Lib/BT_NetworkSystem.dll" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Lib/BT_NetworkSystem.dll" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/ClientNetManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/ClientNetManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/IMessage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/IMessage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/NetworkManager.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/NetworkManager.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/Player.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/Player.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/ServerNetManager.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/ServerNetManager.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/UdpConnection.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/UdpConnection.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/interfaces.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/interfaces/IRecieveData.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/interfaces/IRecieveData.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/UI/NetworkScreen.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/UI/NetworkScreen.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../UnityProyect_clone_0/Assets" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../UnityProyect_clone_0/ProjectSettings" beforeDir="false" />
     </list>
@@ -94,6 +61,7 @@
       <workItem from="1718992287561" duration="1755000" />
       <workItem from="1719196699783" duration="2067000" />
       <workItem from="1719241354714" duration="8018000" />
+      <workItem from="1719331789535" duration="1467000" />
     </task>
     <servers />
   </component>

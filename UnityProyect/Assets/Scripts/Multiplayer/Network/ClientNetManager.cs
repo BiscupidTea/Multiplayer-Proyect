@@ -15,7 +15,9 @@ public class ClientNetManager : NetworkManager
     private DateTime currentTimePing = DateTime.UtcNow;
 
     public Dictionary<MessageType, uint> LastMessage = new Dictionary<MessageType, uint>();
-    public Dictionary<MessageType, List<CacheMessage>> pendingMessages = new Dictionary<MessageType, List<CacheMessage>>();
+
+    public Dictionary<MessageType, List<CacheMessage>> pendingMessages =
+        new Dictionary<MessageType, List<CacheMessage>>();
 
     public ClientNetManager() : base()
     {
@@ -85,16 +87,27 @@ public class ClientNetManager : NetworkManager
                 if (!LastMessage.ContainsKey(messageType))
                 {
                     LastMessage.Add(messageType, ordenableNumber);
+                    //Debug.Log(messageType +  " New " + ordenableNumber);
                 }
                 else
                 {
+                    
                     if (ordenableNumber == LastMessage[messageType] + 1)
                     {
                         LastMessage[messageType] = ordenableNumber;
+                        //Debug.Log(ordenableNumber + " == " + LastMessage[messageType] + 1);
+
                     }
                     else
                     {
-                        //pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
+                        //Debug.Log(ordenableNumber + " != " + LastMessage[messageType] + 1);
+
+                        if (!pendingMessages.ContainsKey(messageType))
+                        {
+                            pendingMessages[messageType] = new List<CacheMessage>();
+                        }
+                        pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
+
                         return;
                     }
                 }
@@ -176,6 +189,7 @@ public class ClientNetManager : NetworkManager
                 break;
 
             case MessageType.PingPong:
+                Debug.Log("send pingpong");
                 CheckPingPong(data, ip);
                 break;
 

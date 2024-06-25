@@ -19,7 +19,6 @@ public class ServerNetManager : NetworkManager
 
     public ServerNetManager() : base()
     {
-
     }
 
     public void startServer()
@@ -52,14 +51,14 @@ public class ServerNetManager : NetworkManager
                 {
                     if (CheckUserName(userName))
                     {
-
                         int id = clientId;
                         ipToId[ip] = clientId;
 
                         clients.Add(clientId, new Client(ip, id));
                         AddPlayer(new Player(userName, clientId));
                         clientId++;
-                        Console.WriteLine("ADD CLIENT::Client Ip = " + ip.Address + " - Client Id = " + userName + "\n");
+                        Console.WriteLine("ADD CLIENT::Client Ip = " + ip.Address + " - Client Id = " + userName +
+                                          "\n");
                         return true;
                     }
                     else
@@ -88,8 +87,8 @@ public class ServerNetManager : NetworkManager
                 errorMessage.data = ErrorMessageType.GameStarted;
                 SendToClient(errorMessage.Serialize(), ip);
             }
-
         }
+
         Console.WriteLine("Can't add player: ip alredy in use\n");
         return false;
     }
@@ -165,7 +164,7 @@ public class ServerNetManager : NetworkManager
 
         uint ordenableNumber = BitConverter.ToUInt32(data, 8);
 
-        Console.Write("message recived - " + messageType + "\n");
+        //Console.Write("message recived - " + messageType + "\n");
 
         if (haveCheckSum && checkSumReeder.CheckSumStatus(data))
         {
@@ -176,19 +175,20 @@ public class ServerNetManager : NetworkManager
                     if (!GetClient(ip).LastMessage.ContainsKey(messageType))
                     {
                         GetClient(ip).LastMessage.Add(messageType, ordenableNumber);
-                        Console.Write("Create new key\n");
+                        //Console.Write("Create new key\n");
                     }
                     else
                     {
                         if (ordenableNumber == GetClient(ip).LastMessage[messageType] + 1)
                         {
                             GetClient(ip).LastMessage[messageType] = ordenableNumber;
-                            Console.Write("Set last Message - ordenable important\n");
+                            // Console.Write("Set last Message - ordenable important\n");
                         }
                         else
                         {
-                            GetClient(ip).pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
-                            Console.Write("Save Message - Wait Previous Message\n");
+                            GetClient(ip).pendingMessages[messageType]
+                                .Add(new CacheMessage(data, ordenableNumber, messageType));
+                            //Console.Write("Save Message - Wait Previous Message\n");
                             return;
                         }
                     }
@@ -198,23 +198,22 @@ public class ServerNetManager : NetworkManager
                     if (!GetClient(ip).LastMessage.ContainsKey(messageType))
                     {
                         GetClient(ip).LastMessage.Add(messageType, ordenableNumber);
-                        Console.Write("Create new key\n");
+                        //Console.Write("Create new key\n");
                     }
                     else
                     {
                         if (ordenableNumber > GetClient(ip).LastMessage[messageType])
                         {
                             GetClient(ip).LastMessage[messageType] = ordenableNumber;
-                            Console.Write("Set last Message - ordenable\n");
+                            //Console.Write("Set last Message - ordenable\n");
                         }
                         else
                         {
-                            Console.Write("Discard Message - ordenable\n");
+                            //Console.Write("Discard Message - ordenable\n");
                             return;
                         }
                     }
                 }
-
             }
         }
         else
@@ -311,7 +310,6 @@ public class ServerNetManager : NetworkManager
                 break;
             }
         }
-
     }
 
     public void Broadcast(byte[] data)
@@ -390,7 +388,8 @@ public class ServerNetManager : NetworkManager
         {
             foreach (var client in clients)
             {
-                if (TimeOut < (DateTime.UtcNow - client.Value.LastMessageRecived).TotalSeconds && client.Value.IsConected)
+                if (TimeOut < (DateTime.UtcNow - client.Value.LastMessageRecived).TotalSeconds &&
+                    client.Value.IsConected)
                 {
                     DisconnectPlayer(client.Value);
                 }
@@ -410,6 +409,7 @@ public class ServerNetManager : NetworkManager
 
         return null;
     }
+
     private Client GetClient(int Id)
     {
         foreach (var client in clients)
@@ -422,6 +422,7 @@ public class ServerNetManager : NetworkManager
 
         return null;
     }
+
     private Client GetClient(string ClientId)
     {
         foreach (var client in clients)
