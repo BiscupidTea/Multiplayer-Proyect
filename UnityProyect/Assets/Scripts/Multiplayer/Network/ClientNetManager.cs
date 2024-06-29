@@ -4,6 +4,7 @@ using System.Net;
 using UnityEngine;
 using BT_NetworkSystem;
 using UnityEditor;
+using UnityEngine.Events;
 using MessageType = BT_NetworkSystem.MessageType;
 
 public class ClientNetManager : NetworkManager
@@ -19,6 +20,8 @@ public class ClientNetManager : NetworkManager
     public Dictionary<MessageType, List<CacheMessage>> pendingMessages =
         new Dictionary<MessageType, List<CacheMessage>>();
 
+    public UnityEvent<FactoryData> OnInstanceObject;
+    
     public ClientNetManager() : base()
     {
     }
@@ -104,7 +107,7 @@ public class ClientNetManager : NetworkManager
 
                         if (!pendingMessages.ContainsKey(messageType))
                         {
-                            pendingMessages[messageType] = new List<CacheMessage>();
+                            pendingMessages.Add(messageType, new List<CacheMessage>());
                         }
                         pendingMessages[messageType].Add(new CacheMessage(data, ordenableNumber, messageType));
 
@@ -187,6 +190,10 @@ public class ClientNetManager : NetworkManager
             case MessageType.Quaternion:
                 RotatePlayer(data);
                 break;
+            
+            case MessageType.FactoryRequest:
+                InstanceObject(data);
+                break;
 
             case MessageType.PingPong:
                 Debug.Log("send pingpong");
@@ -202,6 +209,14 @@ public class ClientNetManager : NetworkManager
         }
     }
 
+    public void InstanceObject(byte[] data)
+    {
+        FactoryMessage factoryMessage = new FactoryMessage();
+        FactoryData newData = factoryMessage.Deserialize(data);
+        
+        OnInstanceObject.Invoke(newData);
+    }
+    
     public override void MessageConfirmation(byte[] data)
     {
         ConfirmationMessage confirmationMessage = new ConfirmationMessage();
@@ -265,18 +280,18 @@ public class ClientNetManager : NetworkManager
 
     public override void OnUpdateMessages()
     {
-        // if (messagesToSend.Count > 0)
-        // {
-        //     foreach (CacheMessage message in messagesToSend)
-        //     {
-        //         if ((DateTime.UtcNow - message.lastEmission).Seconds > ImportantMessageTimeOut)
-        //         {
-        //             Debug.Log("Send important message");
-        //             SendToServer(message.message);
-        //             message.lastEmission = DateTime.UtcNow;
-        //         }
-        //     }
-        // }
+        if (messagesToSend.Count > 0)
+        {
+            foreach (CacheMessage message in messagesToSend)
+            {
+                if ((DateTime.UtcNow - message.lastEmission).Seconds > ImportantMessageTimeOut && !message.Received)
+                {
+                    Debug.Log("Send important message, type =" + message.type);
+                    SendToServer(message.message);
+                    message.lastEmission = DateTime.UtcNow;
+                }
+            }
+        }
     }
 
     public override void CheckPingPong(byte[] data, IPEndPoint ip)

@@ -8,6 +8,8 @@ public class ServerNetManager : NetworkManager
     public int clientId = 0; // This id should be generated during first handshake
 
     private Dictionary<Client, List<CacheMessage>> messagesToSend = new();
+    private Dictionary<Client, List<NetObject>> NetObjects = new();
+    private int objectsId = 0;
 
     private int maxPlayers = 4;
     // private float lobbyTime;
@@ -104,14 +106,7 @@ public class ServerNetManager : NetworkManager
             }
         }
 
-        if (currentsPlayers > maxPlayers)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
+        return !(currentsPlayers > maxPlayers);
     }
 
     public void DisconnectPlayer(Client client)
@@ -186,6 +181,11 @@ public class ServerNetManager : NetworkManager
                         }
                         else
                         {
+                            if (!GetClient(ip).pendingMessages.ContainsKey(messageType))
+                            {
+                                GetClient(ip).pendingMessages.Add(messageType, new List<CacheMessage>());
+                            }
+
                             GetClient(ip).pendingMessages[messageType]
                                 .Add(new CacheMessage(data, ordenableNumber, messageType));
                             //Console.Write("Save Message - Wait Previous Message\n");
@@ -237,12 +237,12 @@ public class ServerNetManager : NetworkManager
             {
                 foreach (CacheMessage message in c.pendingMessages[messageType])
                 {
-                    if (message.id == ordenableNumber + 1)
+                    if (message.id == c.LastMessage[messageType] + 1)
                     {
                         ExecuteMessage(data, ip, messageType);
                         GetClient(ip).LastMessage[messageType] = message.id;
 
-                        CheckPendingMessage(data, ip, messageType, GetClient(ip).LastMessage[messageType]);
+                        CheckPendingMessage(data, ip, messageType, c.LastMessage[messageType]);
                         break;
                     }
                 }
@@ -266,6 +266,10 @@ public class ServerNetManager : NetworkManager
                 CheckPingPong(data, ip);
                 break;
 
+            case MessageType.FactoryRequest:
+                SendNewNetObject(data, ip);
+                break;
+
             case MessageType.Disconnect:
                 NetHandShake endHandShake = new NetHandShake(MessageType.Disconnect);
                 DisconnectPlayer(GetClient(endHandShake.Deserialize(data)));
@@ -275,6 +279,19 @@ public class ServerNetManager : NetworkManager
                 Console.Write("Message type Not Found\n");
                 break;
         }
+    }
+
+    private void SendNewNetObject(byte[] data, IPEndPoint ip)
+    {
+        FactoryMessage factoryMessage = new FactoryMessage();
+        FactoryData seting = factoryMessage.Deserialize(data);
+
+        seting.SetOwner(ipToId[ip]);
+        seting.SetID(objectsId);
+        objectsId++;
+
+        factoryMessage.data = seting;
+        Broadcast(factoryMessage.Serialize());
     }
 
     public override void MessageConfirmation(byte[] data)
@@ -372,7 +389,7 @@ public class ServerNetManager : NetworkManager
             {
                 foreach (var m in client.Value)
                 {
-                    if ((DateTime.UtcNow - m.lastEmission).Seconds > ImportantMessageTimeOut)
+                    if ((DateTime.UtcNow - m.lastEmission).Seconds > ImportantMessageTimeOut && !m.Received)
                     {
                         SendToClient(m.message, client.Key.clientId);
                         m.lastEmission = DateTime.UtcNow;

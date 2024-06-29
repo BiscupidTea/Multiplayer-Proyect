@@ -27,6 +27,9 @@ namespace BT_NetworkSystem
         Disconnect,
         MessageError,
         PingPong,
+        FactoryRequest,
+        FactoryOrder,
+        DestroyRequest,
         String,
         Vector3,
         Quaternion,
@@ -185,9 +188,7 @@ namespace BT_NetworkSystem
     public abstract class OrderableMessage<PayloadType> : BaseMessage<PayloadType>
     {
         protected static uint MsgID = 0;
-        protected static uint lastMsgID = 0;
-        protected uint LastExecutedID = 0;
-        
+
         public uint GetId(byte[] message)
         {
             MsgID = BitConverter.ToUInt32(message, ordenablePosition);
@@ -316,6 +317,7 @@ namespace BT_NetworkSystem
             {
                 outData += (char)message[messagePosition + 4 + i];
             }
+
             return outData;
         }
 
@@ -731,6 +733,87 @@ namespace BT_NetworkSystem
 
             outData.AddRange(BitConverter.GetBytes((int)data));
             InsertCheckSum((outData));
+
+            return outData.ToArray();
+        }
+    }
+
+    public class FactoryMessage : OrderableMessage<FactoryData>
+    {
+        public FactoryMessage()
+        {
+            type = MessageType.FactoryRequest;
+            flags = MessageFlags.checksum | MessageFlags.ordenable | MessageFlags.important;
+        }
+
+
+        public override FactoryData Deserialize(byte[] message)
+        {
+            FactoryData data;
+            data.netObject = new NetObject();
+
+            data.netObject.id = BitConverter.ToInt32(message, messagePosition);
+            data.netObject.owner = BitConverter.ToInt32(message, messagePosition + 4);
+
+            data.ParentId = BitConverter.ToInt32(message, messagePosition + 8);
+            data.PrefabId = BitConverter.ToInt32(message, messagePosition + 12);
+
+            data.PositionX = BitConverter.ToInt32(message, messagePosition + 16);
+            data.PositionY = BitConverter.ToInt32(message, messagePosition + 20);
+            data.PositionZ = BitConverter.ToInt32(message, messagePosition + 24);
+
+            data.RotationX = BitConverter.ToInt32(message, messagePosition + 28);
+            data.RotationY = BitConverter.ToInt32(message, messagePosition + 32);
+            data.RotationZ = BitConverter.ToInt32(message, messagePosition + 36);
+            data.RotationW = BitConverter.ToInt32(message, messagePosition + 40);
+
+            data.ScaleX = BitConverter.ToInt32(message, messagePosition + 44);
+            data.ScaleY = BitConverter.ToInt32(message, messagePosition + 48);
+            data.ScaleZ = BitConverter.ToInt32(message, messagePosition + 52);
+
+            return data;
+        }
+
+        public override FactoryData GetData()
+        {
+            return data;
+        }
+
+        public override MessageFlags GetMessageFlag()
+        {
+            return flags;
+        }
+
+        public override MessageType GetMessageType()
+        {
+            return type;
+        }
+
+        public override byte[] Serialize()
+        {
+            List<byte> outData = new List<byte>();
+
+            outData.AddRange(BitConverter.GetBytes((int)GetMessageType()));
+            outData.AddRange(BitConverter.GetBytes((int)GetMessageFlag()));
+            SetId(outData);
+
+            outData.AddRange(BitConverter.GetBytes(data.netObject.id));
+            outData.AddRange(BitConverter.GetBytes(data.netObject.owner));
+            outData.AddRange(BitConverter.GetBytes(data.ParentId));
+            outData.AddRange(BitConverter.GetBytes(data.PrefabId));
+
+            outData.AddRange(BitConverter.GetBytes(data.PositionX));
+            outData.AddRange(BitConverter.GetBytes(data.PositionY));
+            outData.AddRange(BitConverter.GetBytes(data.PositionZ));
+
+            outData.AddRange(BitConverter.GetBytes(data.RotationX));
+            outData.AddRange(BitConverter.GetBytes(data.RotationY));
+            outData.AddRange(BitConverter.GetBytes(data.RotationZ));
+            outData.AddRange(BitConverter.GetBytes(data.RotationW));
+
+            outData.AddRange(BitConverter.GetBytes(data.ScaleX));
+            outData.AddRange(BitConverter.GetBytes(data.ScaleY));
+            outData.AddRange(BitConverter.GetBytes(data.ScaleZ));
 
             return outData.ToArray();
         }

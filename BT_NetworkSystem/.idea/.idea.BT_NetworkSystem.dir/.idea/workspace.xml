@@ -5,12 +5,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="69cb8e46-63e2-4f52-978a-1863dfc1e18c" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/FactoryData.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../UnityProyect/Assets/ScriptableObjects/PreabsList.asset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../UnityProyect/Assets/ScriptableObjects/PreabsList.asset.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/SO.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/SO/PlayerSO.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/SO/PlayerSO.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/SO/PrefabsNetObjectSO.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/SO/PrefabsNetObjectSO.cs.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.BT_NetworkSystem.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.BT_NetworkSystem.dir/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/IMessage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/IMessage.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NetworkManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/NetworkManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MatchMaker/BT_NetworkSystem.dll" beforeDir="false" afterPath="$PROJECT_DIR$/../MatchMaker/BT_NetworkSystem.dll" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Server/BT_NetworkSystem.dll" beforeDir="false" afterPath="$PROJECT_DIR$/../Server/BT_NetworkSystem.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Server/ServerNetManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../Server/ServerNetManager.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Lib/BT_NetworkSystem.dll" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Lib/BT_NetworkSystem.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/ClientPrefab.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/ClientPrefab.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/Player (1).prefab" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/Player (1).prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/Player (2).prefab" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/Player (2).prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/Player (3).prefab" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/Player (3).prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/Player (4).prefab" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Prefabs/Player (4).prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/ClientMonoBehaviour.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/ClientMonoBehaviour.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/ClientNetManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/Multiplayer/Network/ClientNetManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/PlayerSO.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProyect/Assets/Scripts/PlayerSO.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../UnityProyect_clone_0/Assets" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../UnityProyect_clone_0/ProjectSettings" beforeDir="false" />
     </list>
@@ -61,7 +78,11 @@
       <workItem from="1718992287561" duration="1755000" />
       <workItem from="1719196699783" duration="2067000" />
       <workItem from="1719241354714" duration="8018000" />
-      <workItem from="1719331789535" duration="1467000" />
+      <workItem from="1719331789535" duration="1969000" />
+      <workItem from="1719458641583" duration="715000" />
+      <workItem from="1719539720305" duration="219000" />
+      <workItem from="1719543838604" duration="1653000" />
+      <workItem from="1719592877309" duration="5395000" />
     </task>
     <servers />
   </component>
